@@ -1,0 +1,1285 @@
+<!doctype html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="국내 ESS 중앙계약시장 입찰조건(약정 방전용량 유지·운전 중 증설 불가)을 반영한 균등화저장비용(LCOS) 계산기. 고려대학교 Energy Innovation Lab.">
+<meta property="og:title" content="ESS 균등화저장비용(LCOS) 계산기">
+<meta property="og:description" content="국내 ESS 중앙계약시장 입찰조건을 반영한 LCOS 계산기 · 고려대학교 Energy Innovation Lab">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%224%22 y=%228%22 width=%2222%22 height=%2216%22 rx=%223%22 fill=%22%239b1c35%22/%3E%3Crect x=%2226%22 y=%2213%22 width=%223%22 height=%226%22 rx=%221%22 fill=%22%239b1c35%22/%3E%3C/svg%3E">
+<title>ESS LCOS 계산기 · Energy Innovation Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+html{color-scheme:light}body{margin:0}img{max-width:100%}
+/* Layout: instrument-panel tool. Inputs rail on the left, results stack on the right; one causal strip explains the market rule above. */
+:root {
+  --bg: #f1f3f6;
+  --surface: #ffffff;
+  --surface-2: #e8ecf1;
+  --line: #d3d9e1;
+  --fg: #16202b;
+  --muted: #586473;
+  --accent: #9b1c35;
+  --accent-soft: #f5e5e8;
+  --c1: #284a74;
+  --c2: #5f87ba;
+  --c3: #5f978a;
+  --ok-fg: #3b6f63;
+  --c4: #cf953a;
+  --ink-acc: #ffffff;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #0d9488; --s4: #c98500; --s5: #d55181;
+  --explore-fg: #855600;
+  --explore-bg: #fbefd4;
+  --warn-fg: #8a3b12;
+  --warn-bg: #fbe6da;
+  --font-ui: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11161c; --surface: #19202a; --surface-2: #222b36; --line: #2f3a46;
+    --fg: #e5eaf0; --muted: #9ba7b4; --accent: #e3657d; --accent-soft: #3a1f27; --ink-acc: #16202b;
+    --c1: #6f95c9; --c2: #a6c3e8; --c3: #7fb7a7; --c4: #e3b25a; --ok-fg: #8cc4b4; --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181;
+    --explore-fg: #f1c56d; --explore-bg: #3a2e14; --warn-fg: #f3a37c; --warn-bg: #3d2318;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11161c; --surface: #19202a; --surface-2: #222b36; --line: #2f3a46;
+  --fg: #e5eaf0; --muted: #9ba7b4; --accent: #e3657d; --accent-soft: #3a1f27; --ink-acc: #16202b;
+  --c1: #6f95c9; --c2: #a6c3e8; --c3: #7fb7a7; --c4: #e3b25a; --ok-fg: #8cc4b4; --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181;
+  --explore-fg: #f1c56d; --explore-bg: #3a2e14; --warn-fg: #f3a37c; --warn-bg: #3d2318;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-ui); font-size: 14px; line-height: 1.55; }
+:lang(ko) .lede, :lang(ko) .cap, :lang(ko) .note, :lang(ko) .fnote, :lang(ko) .big-sub, :lang(ko) .m-body p, :lang(ko) .m-body li, :lang(ko) .stat span { word-break: keep-all; }
+.foot a { color: inherit; text-decoration: none; }
+.head-r { display: grid; gap: 8px; justify-items: end; }
+#openFull { font-size: 12.5px; color: var(--accent); font-weight: 500; text-decoration: none; }
+#openFull:hover { text-decoration: underline; }
+.foot a:hover { text-decoration: underline; }
+.mini { display: none; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 40px; display: grid; gap: 20px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+p { margin: 0; }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+
+/* header */
+.head { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: start; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.head h1 { font-size: clamp(22px, 3.2vw, 30px); font-weight: 700; letter-spacing: -.01em; margin-top: 6px; }
+.byline { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 14px; }
+.byline b { font-weight: 600; }
+.byline a { color: var(--muted); font-family: var(--font-num); font-size: 12.5px; text-decoration: none; border-bottom: 1px solid var(--line); }
+.byline a:hover { color: var(--accent); border-color: var(--accent); }
+.affil { margin-top: 2px; font-size: 13px; color: var(--muted); }
+.lede { margin-top: 10px; max-width: 68ch; color: var(--muted); font-size: 15px; }
+.lang { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--surface); }
+.lang button { border: 0; background: transparent; color: var(--muted); font: 500 13px var(--font-ui); padding: 6px 12px; cursor: pointer; }
+.lang button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+
+/* rule strip */
+.rule { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 10px 14px; }
+.rule .step { font-size: 13px; font-weight: 500; background: var(--surface-2); border-radius: 999px; padding: 3px 11px; }
+.rule .step.last { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.rule-desc { flex-basis: 100%; font-size: 13px; color: var(--muted); margin-top: 4px; max-width: 120ch; }
+:lang(ko) .rule-desc { word-break: keep-all; }
+.rule .arrow { color: var(--muted); font-size: 16px; line-height: 1; }
+.rule-tag { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); font-weight: 600; margin-right: 6px; }
+
+/* main */
+.main { display: grid; grid-template-columns: 350px minmax(0, 1fr); gap: 20px; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
+.inputs { padding: 18px; display: grid; gap: 18px; }
+.group { display: grid; gap: 10px; }
+.group + .group { border-top: 1px solid var(--line); padding-top: 16px; }
+.group-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.group-h h2 { font-size: 13px; font-weight: 600; letter-spacing: .02em; }
+.linkbtn { border: 0; background: none; color: var(--accent); font: 500 12px var(--font-ui); cursor: pointer; padding: 2px 0; }
+.linkbtn:hover { text-decoration: underline; }
+.techs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.tech { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 8px; padding: 8px 6px; font: 500 13px var(--font-ui); cursor: pointer; text-align: center; line-height: 1.25; display: grid; gap: 2px; justify-items: center; }
+.tech small { font-size: 10.5px; color: var(--muted); font-weight: 400; }
+.tech[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.tech[aria-pressed="true"] small { color: var(--accent); }
+.tag-ex { font-size: 10px; font-weight: 600; color: var(--explore-fg); background: var(--explore-bg); border-radius: 4px; padding: 0 5px; }
+.field { display: grid; grid-template-columns: 1fr 128px; align-items: center; gap: 8px; }
+.field label { font-size: 13px; color: var(--fg); min-width: 0; }
+.field label .u { color: var(--muted); font-size: 12px; }
+.field.changed label::after { content: " •"; color: var(--accent); }
+.field input, .field select { width: 100%; border: 1px solid var(--line); background: var(--bg); color: var(--fg); border-radius: 6px; padding: 6px 8px; font: 13px var(--font-num); text-align: right; font-variant-numeric: tabular-nums; }
+.field select { text-align: left; font-family: var(--font-ui); }
+.field input:focus, .field select:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.field input.bad { border-color: var(--warn-fg); background: var(--warn-bg); }
+.basis { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 13px; }
+.basis span { grid-column: 1 / -1; }
+.basis button { border: 1px solid var(--line); background: var(--surface); color: var(--muted); border-radius: 999px; padding: 4px 11px; font: 500 12.5px var(--font-ui); cursor: pointer; min-height: 28px; }
+.basis button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.decomp { display: flex; height: 26px; border-radius: 5px; overflow: hidden; background: var(--surface-2); }
+.decomp div { height: 100%; display: flex; align-items: center; justify-content: center; font: 500 11.5px var(--font-num); color: #fff; overflow: hidden; white-space: nowrap; }
+.decomp-leg { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 4px 16px; font-size: 12.5px; }
+.decomp-leg div { display: grid; grid-template-columns: 12px 1fr auto; gap: 6px; align-items: center; }
+.decomp-leg i { width: 10px; height: 10px; border-radius: 2px; }
+.decomp-leg b { font: 500 12.5px var(--font-num); }
+.defs { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px 18px; font-size: 13px; }
+.defs div { background: var(--surface-2); border-radius: 8px; padding: 9px 12px; }
+.defs b { display: block; font-size: 13px; margin-bottom: 2px; }
+.defs span { color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip { border: 1px solid var(--line); background: var(--surface); color: var(--muted); border-radius: 999px; padding: 3px 10px; min-height: 28px; font: 12px var(--font-num); cursor: pointer; }
+.chip[aria-pressed="true"] { border-color: var(--fg); color: var(--fg); background: var(--surface-2); }
+.status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; border-radius: 999px; padding: 2px 10px; width: fit-content; }
+.status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.st-grid { color: var(--ok-fg); background: var(--surface-2); }
+.st-interp { color: var(--c1); background: var(--surface-2); }
+.st-out { color: var(--warn-fg); background: var(--warn-bg); }
+.st-manual { color: var(--accent); background: var(--accent-soft); }
+.note { font-size: 12px; color: var(--muted); }
+.note.ex { color: var(--explore-fg); background: var(--explore-bg); border-radius: 6px; padding: 8px 10px; }
+details.adv summary { cursor: pointer; font-size: 13px; font-weight: 600; list-style: none; display: flex; justify-content: space-between; }
+details.adv summary::-webkit-details-marker { display: none; }
+details.adv summary::after { content: "+"; color: var(--muted); font-weight: 400; }
+details.adv[open] summary::after { content: "–"; }
+details.adv .group { margin-top: 12px; border-top: 0; padding-top: 0; }
+.resetall { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 8px; padding: 8px; font: 500 13px var(--font-ui); cursor: pointer; }
+.resetall:hover { border-color: var(--fg); }
+
+/* results */
+.results { display: grid; gap: 16px; min-width: 0; }
+.hero { padding: 20px 22px; display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 24px; align-items: center; }
+.big-l { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.big { display: flex; align-items: baseline; gap: 8px; margin-top: 2px; }
+.big .v { font: 500 52px/1 var(--font-num); letter-spacing: -.02em; color: var(--accent); font-variant-numeric: tabular-nums; }
+.hero.warn .big .v { color: var(--warn-fg); }
+.hero.warn .big-sub { color: var(--warn-fg); font-weight: 500; }
+.dim { opacity: .35; filter: grayscale(1); pointer-events: none; }
+.tag-ip { font-size: 10px; font-weight: 500; color: var(--muted); background: var(--surface-2); border-radius: 4px; padding: 0 5px; }
+.tag-out { font-size: 10px; font-weight: 600; color: var(--warn-fg); background: var(--warn-bg); border-radius: 4px; padding: 0 5px; }
+.st-explore { color: var(--explore-fg); background: var(--explore-bg); }
+.fnote { font-size: 11.5px; color: var(--explore-fg); margin-top: -4px; }
+.big .u { font-size: 15px; color: var(--muted); }
+.big-sub { margin-top: 6px; font-size: 13px; color: var(--muted); }
+.case-line { margin-top: 4px; font-size: 13px; font-weight: 600; }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 18px; }
+.stat { display: grid; gap: 1px; min-width: 0; border-left: 1px solid var(--line); padding-left: 12px; }
+.stat span { font-size: 12px; color: var(--muted); }
+.stat b { font: 500 17px var(--font-num); font-variant-numeric: tabular-nums; }
+.stat b small { font: 12px var(--font-ui); color: var(--muted); margin-left: 2px; }
+.card { padding: 18px 20px; display: grid; gap: 12px; min-width: 0; }
+.card h3 { font-size: 15px; font-weight: 600; }
+.card .cap { font-size: 13px; color: var(--muted); max-width: 70ch; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.parts { max-width: 560px; }
+svg text { font-family: var(--font-ui); }
+.ax { stroke: var(--line); stroke-width: 1; }
+.grid-l { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 4; }
+.tick { fill: var(--muted); font-size: 11px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted); }
+.legend i { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
+.legend i.dash { background: repeating-linear-gradient(90deg, var(--muted) 0 4px, transparent 4px 7px); }
+.stack { display: flex; height: 22px; border-radius: 5px; overflow: hidden; background: var(--surface-2); }
+.stack div { height: 100%; }
+.parts { display: grid; gap: 6px; }
+.part { display: grid; grid-template-columns: 12px 1fr auto auto; gap: 8px; align-items: center; font-size: 13px; }
+.part .sw { width: 10px; height: 10px; border-radius: 2px; }
+.part .pv { font-family: var(--font-num); font-variant-numeric: tabular-nums; text-align: right; }
+.part .pp { font-family: var(--font-num); color: var(--muted); font-size: 12px; width: 44px; text-align: right; }
+.part-h { font-size: 11.5px; color: var(--muted); }
+.part-h .pv, .part-h .pp { font-family: var(--font-ui); font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+.field input:disabled { opacity: .55; }
+.cmp { display: grid; gap: 7px; }
+.cmp-row { display: grid; grid-template-columns: 250px minmax(0, 1fr) 62px; gap: 8px; align-items: center; font-size: 12.5px; }
+.cmp-row .nm { display: flex; gap: 4px; align-items: center; min-width: 0; }
+.cmp-row .bar { height: 14px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+.cmp-row .bar div { height: 100%; background: var(--c2); }
+.cmp-row.sel .bar div { background: var(--accent); }
+.cmp-row.sel .nm { font-weight: 600; color: var(--accent); }
+.cmp-head { font-size: 11.5px; color: var(--muted); }
+.cmp-head .val { font-family: var(--font-ui); white-space: nowrap; }
+.sen { display: grid; gap: 6px; }
+.sen-row { display: grid; grid-template-columns: 150px minmax(0, 1fr) 58px 58px; gap: 10px; align-items: center; font-size: 12.5px; }
+.sen-head { font-size: 11.5px; color: var(--muted); }
+.sen-axis { display: flex; justify-content: space-between; gap: 6px; }
+.sen-axis span:nth-child(2) { color: var(--fg); font-weight: 500; }
+.sbar { position: relative; height: 18px; background: var(--surface-2); border-radius: 3px; }
+.sbar .mid { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--fg); opacity: .5; }
+.tb { position: absolute; height: 7px; border-radius: 2px; }
+.tb.lo { top: 2px; background: var(--s1); }
+.tb.hi { bottom: 2px; background: var(--s2); }
+.sv { font-family: var(--font-num); font-variant-numeric: tabular-nums; text-align: right; }
+.sen-head .sv { font-family: var(--font-ui); }
+.chart-wrap { position: relative; }
+.tip { position: absolute; top: 8px; min-width: 170px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 14px rgba(0,0,0,.12); pointer-events: none; display: grid; gap: 3px; }
+.tip b { font-weight: 600; margin-bottom: 2px; }
+.tip div { display: grid; grid-template-columns: 12px 1fr auto; gap: 6px; align-items: center; }
+.tip .tv { margin-left: 8px; }
+.tip i { width: 10px; height: 3px; border-radius: 2px; display: inline-block; }
+.tip .tv { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.tip em.tag-ex { font-style: normal; }
+.chart-lab { paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+.cmp-row .od { font-size: 11px; color: var(--muted); font-weight: 400; font-family: var(--font-num); white-space: nowrap; }
+.cmp-row .val { font-family: var(--font-num); text-align: right; font-variant-numeric: tabular-nums; }
+.cmp-row.na .val, .cmp-row.na .nm { color: var(--muted); }
+
+/* method */
+.method { padding: 4px 20px; }
+.method > summary { cursor: pointer; padding: 14px 0; font-size: 15px; font-weight: 600; list-style: none; display: flex; justify-content: space-between; }
+.method > summary::-webkit-details-marker { display: none; }
+.method > summary::after { content: "+"; color: var(--muted); font-weight: 400; }
+.method[open] > summary::after { content: "–"; }
+.m-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px 28px; padding-bottom: 20px; }
+.m-body h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; }
+.m-body p, .m-body li { font-size: 13px; color: var(--muted); }
+.m-body ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.eq { font-family: var(--font-num); font-size: 12.5px; background: var(--surface-2); border-radius: 6px; padding: 10px 12px; line-height: 1.8; overflow-x: auto; white-space: nowrap; color: var(--fg); }
+.ptable-wrap { overflow-x: auto; }
+table.pt { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+table.pt th, table.pt td { padding: 5px 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+table.pt th:first-child, table.pt td:first-child { text-align: left; }
+table.pt th { color: var(--muted); font-weight: 500; }
+table.pt td { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+table.pt td:first-child { font-family: var(--font-ui); }
+.foot { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+
+@media (max-width: 1120px) {
+  .hero { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+}
+@media (max-width: 900px) and (min-width: 761px) {
+  .main { grid-template-columns: 300px minmax(0, 1fr); gap: 16px; }
+  .inputs { padding: 14px; }
+  .field { grid-template-columns: 1fr 108px; }
+  .hero { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+}
+@media (max-width: 900px) {
+  .two, .m-body, .defs { grid-template-columns: minmax(0, 1fr); }
+  .cmp-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'nm val' 'bar bar'; row-gap: 3px; }
+  .cmp-row .nm { grid-area: nm; } .cmp-row .val { grid-area: val; } .cmp-row .bar { grid-area: bar; }
+  .cmp-head span:nth-child(2) { display: none; }
+  .sen-row { grid-template-columns: minmax(0, 1fr) 50px 50px; grid-template-areas: 'sl sl sl' 'sb lo hi'; gap: 2px 8px; font-size: 12px; }
+  .sen-row .sl { grid-area: sl; } .sen-row .sbar { grid-area: sb; } .sen-row .slo { grid-area: lo; } .sen-row .shi { grid-area: hi; }
+  .sen-head { grid-template-areas: 'sb lo hi'; } .sen-head > span:first-child { display: none; } .sen-head .sen-axis { grid-area: sb; }
+  .sen-axis span:first-child, .sen-axis span:last-child { display: none; }
+  .sen-axis { justify-content: center; }
+}
+@media (max-width: 760px) {
+  .mini { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 8px 14px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+  .mini b { font: 500 20px var(--font-num); color: var(--accent); }
+  .mini .mini-l, .mini #miniU, .mini .mini-c { font-size: 12px; color: var(--muted); }
+  .mini .mini-c { margin-left: auto; }
+  .mini.warn b { color: var(--warn-fg); }
+  .main { grid-template-columns: minmax(0, 1fr); }
+  .inputs { max-width: 560px; width: 100%; justify-self: center; }
+  html { scroll-padding-top: 76px; }
+}
+@media (max-width: 640px) {
+  .head { grid-template-columns: minmax(0, 1fr); }
+  .lang { justify-self: start; }
+  .head-r { justify-items: start; }
+  .hero { grid-template-columns: 1fr; gap: 16px; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .big .v { font-size: 44px; }
+  .field { grid-template-columns: 1fr 120px; }
+  .hero { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .stack div, .cmp-row .bar div { transition: width .25s ease; }
+}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header class="head">
+    <div>
+      <div class="eyebrow" data-i="eyebrow"></div>
+      <h1 data-i="h1"></h1>
+      <div class="byline">
+        <span class="au"><b data-i="n1"></b> <a href="mailto:oily_choi@korea.ac.kr">oily_choi@korea.ac.kr</a></span>
+        <span class="au"><b data-i="n2"></b> <a href="mailto:jrwoo@korea.ac.kr">jrwoo@korea.ac.kr</a></span>
+      </div>
+      <p class="affil"><span data-i="affil"></span> · 2026</p>
+      <p class="lede" data-i="lede"></p>
+    </div>
+    <div class="head-r"><div class="lang" role="group" aria-label="Language">
+      <button type="button" id="lang-ko" aria-pressed="true">한국어</button>
+      <button type="button" id="lang-en" aria-pressed="false">English</button>
+    </div><a id="openFull" href="#" target="_blank" rel="noopener" hidden data-i="openFull"></a></div>
+  </header>
+
+  <section class="rule" aria-label="Central contract market rule">
+    <span class="rule-tag" data-i="r0"></span>
+    <span class="step" data-i="r1b"></span><span class="arrow" aria-hidden="true">›</span>
+    <span class="step" data-i="r2b"></span><span class="arrow" aria-hidden="true">›</span>
+    <span class="step last" data-i="r3b"></span>
+    <p class="rule-desc" data-i="ruleDesc"></p>
+  </section>
+
+  <div class="mini" id="mini" aria-hidden="true"><span class="mini-l">LCOS</span> <b id="miniV">–</b> <span id="miniU"></span> <span class="mini-c" id="miniC"></span></div>
+  <div class="main">
+    <form class="panel inputs" id="form" autocomplete="off">
+      <div class="group">
+        <div class="group-h"><h2 data-i="gTech"></h2></div>
+        <div class="techs" id="techs"></div>
+        <p class="note ex" id="exNote" hidden></p>
+        <div class="field" id="f-pumped" hidden>
+          <label for="pumped" data-i="calcType"></label>
+          <select id="pumped"><option value="0"></option><option value="1"></option></select>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="group-h"><h2 data-i="gScale"></h2></div>
+        <div class="field"><label for="P"><span data-i="lP"></span> <span class="u">MW</span></label><input id="P" type="number" min="0.1" step="any" inputmode="decimal"></div>
+        <div class="chips" id="chipsP" role="group" aria-label="MW"></div>
+        <div class="basis" role="group" aria-labelledby="basisL"><span id="basisL" data-i="basisL"></span>
+          <button type="button" id="basis-nom" aria-pressed="false" data-i="bNom"></button><button type="button" id="basis-eff" aria-pressed="true" data-i="bEff"></button></div>
+        <p class="note" id="basisNote"></p>
+        <div class="field"><label for="d"><span id="lDtxt"></span> <span class="u">h</span></label><input id="d" type="number" min="0.5" step="any" inputmode="decimal"></div>
+        <div class="chips" id="chipsD" role="group" aria-label="h"></div>
+      </div>
+
+      <div class="group">
+        <div class="group-h"><h2 data-i="gCost"></h2><button type="button" class="linkbtn" id="costReset" hidden data-i="useAuto"></button></div>
+        <span class="status" id="costStatus"></span>
+        <div class="field" id="f-cp"><label for="cp"><span data-i="lCP"></span> <span class="u" data-i="uKW"></span></label><input id="cp" type="text" inputmode="numeric"></div>
+        <div class="field" id="f-ce"><label for="ce"><span data-i="lCE"></span> <span class="u" data-i="uKWh"></span></label><input id="ce" type="text" inputmode="numeric"></div>
+        <div class="field" id="f-om"><label for="om"><span data-i="lOM"></span> <span class="u" data-i="uKWy"></span></label><input id="om" type="text" inputmode="numeric"></div>
+        <p class="note" id="costNote"></p>
+      </div>
+
+      <div class="group">
+        <div class="group-h"><h2 data-i="gOp"></h2></div>
+        <div class="field" id="f-cyc"><label for="cyc"><span data-i="lCyc"></span> <span class="u" data-i="uTimes"></span></label><input id="cyc" type="number" min="1" step="1"></div>
+        <p class="fnote" id="cycNote" hidden></p>
+        <div class="field" id="f-pel"><label for="pel"><span data-i="lPel"></span> <span class="u" data-i="uKWh"></span></label><input id="pel" type="number" min="0" step="5"></div>
+        <div class="chips" id="chipsPel" role="group" aria-label="KRW/kWh"></div>
+        <div class="field" id="f-r"><label for="r"><span data-i="lR"></span> <span class="u">%</span></label><input id="r" type="number" min="0" step="0.5"></div>
+      </div>
+
+      <div class="group" id="adv">
+        <div class="group-h"><h2 data-i="gTechP"></h2></div>
+          <div class="field" id="f-eta"><label for="eta"><span data-i="lEta"></span> <span class="u">%</span></label><input id="eta" type="number" min="1" max="100" step="1"></div>
+          <div class="field" id="f-dod"><label for="dod"><span data-i="lDod"></span> <span class="u">%</span></label><input id="dod" type="number" min="1" max="100" step="1"></div>
+          <div class="field" id="f-self"><label for="self"><span data-i="lSelf"></span> <span class="u" data-i="uDay"></span></label><input id="self" type="number" min="0" step="0.001"></div>
+          <div class="field" id="f-tc"><label for="tc"><span data-i="lTc"></span> <span class="u" data-i="uYr"></span></label><input id="tc" type="number" min="0" step="1" inputmode="numeric"></div>
+          <div class="field" id="f-lifeY"><label for="lifeY"><span data-i="lLifeY"></span> <span class="u" data-i="uYr"></span></label><input id="lifeY" type="number" min="1" step="any"></div>
+          <div class="field" id="f-lifeC"><label for="lifeC"><span data-i="lLifeC"></span> <span class="u" data-i="uTimes"></span></label><input id="lifeC" type="number" min="1" step="100"></div>
+          <div class="field" id="f-deg"><label for="deg"><span data-i="lDeg"></span> <span class="u" data-i="uCyc"></span></label><input id="deg" type="number" min="0" step="0.0001"></div>
+          <p class="note" id="degNote"></p>
+          <div class="field" id="f-sohC"><label for="sohC"><span data-i="lSohC"></span> <span class="u">%</span></label><input id="sohC" type="number" min="1" max="100" step="1"></div>
+          <p class="note" data-i="advNote"></p>
+      </div>
+
+      <button type="button" class="resetall" id="resetAll" data-i="resetAll"></button>
+    </form>
+
+    <div class="results">
+      <section class="panel hero" id="hero">
+        <div>
+          <div class="big-l">LCOS</div>
+          <div aria-live="polite" aria-atomic="true"><div class="big"><span class="v" id="lcos">–</span><span class="u" data-i="uKWh"></span></div>
+          <div class="case-line" id="caseLine"></div>
+          <div class="big-sub" id="lcosSub"></div></div>
+        </div>
+        <div class="stats" id="stats"></div>
+      </section>
+
+      <section class="panel card" id="ovCard">
+        <h3 data-i="ovT"></h3>
+        <div class="defs"><div><b data-i="defEffT"></b><span data-i="defEff"></span></div><div><b data-i="defNomT"></b><span data-i="defNom"></span></div></div>
+        <div class="decomp" id="decomp"></div>
+        <div class="decomp-leg" id="decompLeg"></div>
+        <p class="note" id="decompNote"></p>
+        <p class="cap" id="ovCap"></p>
+        <svg id="ovChart" viewBox="0 0 640 240" width="100%" role="img" aria-labelledby="ovCap"></svg>
+        <div class="legend" id="ovLegend"></div>
+      </section>
+
+      <div class="two">
+        <section class="panel card" id="bdCard">
+          <h3 data-i="bdT"></h3>
+          <div class="stack" id="stack"></div>
+          <div class="parts" id="parts"></div>
+        </section>
+        <section class="panel card" id="senCard">
+          <h3 data-i="senT"></h3>
+          <p class="cap" data-i="senCap"></p>
+          <div class="sen" id="sen"></div>
+        </section>
+        <section class="panel card" id="cmpCard">
+          <h3 data-i="cmpT"></h3>
+          <p class="cap" id="cmpCap"></p>
+          <div class="cmp" id="cmp"></div>
+        </section>
+        <section class="panel card" id="durCard">
+          <h3 data-i="durT"></h3>
+          <p class="cap" id="durCap"></p>
+          <div class="chart-wrap"><svg id="durChart" viewBox="0 0 640 270" width="100%" role="img" aria-labelledby="durCap" style="touch-action: pan-y"></svg><div class="tip" id="durTip" hidden></div></div>
+          <div class="legend" id="durLegend"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <details class="panel method" id="method">
+    <summary data-i="mT"></summary>
+    <div class="m-body" id="mBody"></div>
+  </details>
+
+  <div class="foot"><a href="https://energyinnovation.korea.ac.kr" target="_blank" rel="noopener">Energy Innovation Lab (Energy Policy &amp; Innovation Strategy Lab) · Korea University</a></div>
+</div>
+
+<script>
+const GRID = {"LFP":[[1,2,424710.6059,483198.0342,4474.5609],[1,4,430504.7478,457413.9283,7721.0878],[1,6,432822.4046,450097.9855,9852.5033],[1,8,434560.6472,446283.321,12365.0328],[1,10,434560.6472,443776.2328,14948.1389],[1,24,434560.6472,436352.2257,32888.7287],[10,2,303555.0974,432072.8855,3938.1782],[10,4,304134.5116,408925.5448,6478.9384],[10,6,304453.1894,404473.3019,8991.4679],[10,8,304337.3066,400582.9926,11461.6514],[10,10,304337.3066,398551.3866,13931.8349],[10,24,304337.3066,392197.2146,31025.5046],[100,2,245468.8243,411335.3753,3613.5256],[100,4,245352.9414,379899.5145,6027.2477],[100,6,245323.9707,373448.0848,8412.7392],[100,8,245295,369936,10770],[100,10,245295,368066.4902,13169.6068],[100,24,245295,361831.1889,29416.3565],[500,2,216144.4863,394415.8621,3423.9033],[500,4,216113.7644,366441.8161,5748.1871],[500,6,216106.0823,359796.6948,8084.3741],[500,8,216077.0136,356882.1229,10352.1019],[500,10,216077.0136,355472.2711,12632.0705],[500,24,216077.0136,349817.9974,28362.3513],[1000,2,204620.1234,387345.1343,3345.3342],[1000,4,204620.1234,360793.773,5632.0183],[1000,6,204620.1234,354072.183,7946.9332],[1000,8,204591.1527,351402.9985,10177.156],[1000,10,204591.1527,350181.8736,12407.3788],[1000,24,204591.1527,344767.8598,27920.1311]],"NCM":[[1,2,424710.6059,607420.6692,4869.7151],[1,4,430504.7478,576863.5548,7918.5802],[1,6,432822.4046,567964.0286,10910.9849],[1,8,434560.6472,563719.6391,13889.2744],[1,10,434560.6472,560246.9569,16867.564],[1,24,434560.6472,551272.7493,37376.8279],[10,2,303555.0974,548161.0269,4319.2256],[10,4,304134.5116,520616.0597,7212.8244],[10,6,304453.1894,515052.3,10078.193],[10,8,304337.3066,510310.035,12915.3314],[10,10,304337.3066,507820.657,15752.4698],[10,24,304337.3066,499705.2849,35287.7907],[100,2,245468.8243,526005.563,3980.4628],[100,4,245352.9414,488465.7434,6718.7953],[100,6,245323.9707,480412.6057,9443.0128],[100,8,245295,475633,12139],[100,10,245295,473367.6661,14820.8721],[100,24,245295,466024.0011,33396.3651],[500,2,216144.4863,504473.1491,3831.2591],[500,4,216113.7644,473348.1886,6409.862],[500,6,216106.0823,465469.7165,9034.6709],[500,8,216077.0136,461526.6929,11661.352],[500,10,216077.0136,459225.6601,14243.7663],[500,24,216077.0136,452092.0941,32153.0712],[1000,2,204620.1234,495473.3423,3768.736],[1000,4,204620.1234,466982.4116,6281.2267],[1000,6,204620.1234,459178.2117,8864.293],[1000,8,204591.1527,455581.0605,11461.4744],[1000,10,204591.1527,453265.939,14002.1953],[1000,24,204591.1527,446220.9994,31631.9756]],"PSH":[[100,4,1438280.6802,394294.4729,27455.0864],[100,7,1448390.1253,249140.8243,27455.0864],[100,10,1454932.2655,185939.3782,27455.0864],[100,24,1487507.5308,100466.8375,27455.0864],[500,4,1161079.5943,338935.6392,17785],[500,7,1164300,201480,17785],[500,10,1166372.7386,144631.3389,17785],[500,24,1194859.7058,80407.4123,17785],[1000,4,1058807.4141,317555.984,14751.6855],[1000,7,1059809.6336,183873.0094,14751.6855],[1000,10,1060449.7128,129799.1152,14751.6855],[1000,24,1087279.9405,73053.0221,14751.6855]]};
+
+const TECH = {
+  LFP:  { grid: 'LFP', p: { eta: 91, dod: 80, self: 0.083, tc: 1, lifeY: 16, lifeC: 9000, sohC: 80 }, pumped: false },
+  NCM:  { grid: 'NCM', p: { eta: 87, dod: 80, self: 0.1, tc: 1, lifeY: 13, lifeC: 4500, sohC: 80 }, pumped: false },
+  NMF:  { derive: 'LFP', ceAdd: 9954.42, explore: true, p: { eta: 90, dod: 80, self: 0.1, tc: 1, lifeY: 16, lifeC: 4000, sohC: 80 }, pumped: false },
+  NFPP: { derive: 'LFP', ceAdd: 9954.42, explore: true, p: { eta: 94, dod: 80, self: 0.1, tc: 1, lifeY: 20, lifeC: 7300, sohC: 80 }, pumped: false },
+  PSH:  { grid: 'PSH', p: { eta: 83, dod: 100, self: 0, tc: 7, lifeY: 45, lifeC: 33250, sohC: 100 }, pumped: true },
+  CUSTOM: { custom: true, p: { eta: 91, dod: 80, self: 0.083, tc: 1, lifeY: 16, lifeC: 9000, sohC: 80 }, pumped: false }
+};
+const ORDER = ['LFP', 'NCM', 'NMF', 'NFPP', 'PSH', 'CUSTOM'];
+
+const REFS_KO = `
+        <li>안재균·임덕오(2025), 『효율적 탄소중립 실현을 위한 에너지저장장치비용(LCOS) 전망 및 최적믹스 수립 시스템 구축 연구(2/3)』, 에너지경제연구원 기본연구보고서 2025-23.</li>
+        <li>한국전력거래소(2025), 2025년 제1차 ESS 중앙계약시장 경쟁입찰 공고문.</li>
+        <li>Pacific Northwest National Laboratory (2024), Energy Storage Cost and Performance Database v2024.</li>
+        <li>Schmidt, O., Melchior, S., Hawkes, A. &amp; Staffell, I. (2019), Projecting the Future Levelized Cost of Electricity Storage Technologies, Joule, 3(1), 81–100.</li>
+        <li>Wood Mackenzie (2025.11.24.), Sodium-Ion Batteries Enter Energy Storage Market.</li>
+        <li>한국은행 경제통계시스템, 원화의 대미달러 환율 (2025년 평균).</li>
+        <li>Faradion, Strong Performance; HiTHIUM, ∞Cell N162Ah; Peak Energy, GS-1.1 (검색일: 2026.8.26.).</li>`;
+const REFS_EN = `
+        <li>Ahn, J. &amp; Lim, D. (2025), A Study on the LCOS Outlook and the Establishment of the Optimal Mix for the Realization of Efficient Carbon Neutrality (2/3), Korea Energy Economics Institute, Basic Research Report 2025-23 (in Korean).</li>
+        <li>Korea Power Exchange (2025), 1st 2025 ESS Central Contract Market Auction Notice (in Korean).</li>
+        <li>Pacific Northwest National Laboratory (2024), Energy Storage Cost and Performance Database v2024.</li>
+        <li>Schmidt, O., Melchior, S., Hawkes, A. &amp; Staffell, I. (2019), Projecting the Future Levelized Cost of Electricity Storage Technologies, Joule, 3(1), 81–100.</li>
+        <li>Wood Mackenzie (2025.11.24), Sodium-Ion Batteries Enter Energy Storage Market.</li>
+        <li>Bank of Korea Economic Statistics System, KRW/USD exchange rate (2025 average).</li>
+        <li>Faradion, Strong Performance; HiTHIUM, ∞Cell N162Ah; Peak Energy, GS-1.1 (accessed 26 Aug 2026).</li>`;
+
+const I18N = {
+  ko: {
+    eyebrow: 'Energy Innovation Lab · ESS 경제성 도구',
+    h1: 'ESS 균등화저장비용(LCOS) 계산기',
+    n1: '최지성', n2: '우종률', affil: '고려대학교 에너지환경대학원 & 융합에너지공학과',
+    lede: '국내 ESS 중앙계약시장의 입찰조건을 반영해, 저장설비가 생애주기 동안 1kWh를 방전하는 데 드는 비용을 계산합니다. 국내 기준비용을 바탕으로 한 사례값으로 시작하고, 규모와 비용·기술 파라미터는 직접 바꿔 볼 수 있습니다.',
+    r0: '중앙계약시장 기준',
+    r1b: '약정 방전용량 유지',
+    r2b: '운전 중 증설 불가',
+    r3b: '처음부터 크게 설치(오버사이징)',
+    ruleDesc: 'ESS 중앙계약시장에서 낙찰받은 사업자는 약정한 방전용량(2025년 제1차 입찰은 육지 500MW·3,000MWh, 즉 6시간)을 계약기간 내내 유지해야 하고, 운전 중에는 용량을 보강하거나 증설할 수 없습니다. 그래서 계약 마지막 해에도 약정 방전량을 낼 수 있도록 처음부터 더 큰 용량을 설치합니다. 얼마나 더 크게 지어야 하는지는 기술마다 다른 열화 속도, 방전깊이 한도, 방전효율이 결정합니다. 이 계산기는 그 오버사이징 비용을 LCOS에 반영해, 기술들을 같은 약정 방전량 기준으로 비교합니다.',
+    gTech: '저장 기술', gScale: '설비 규모', gCost: '비용', gOp: '운전·재무 조건', gTechP: '기술 파라미터',
+    calcType: '계산 방식', ptBattery: '배터리형 (열화·오버사이징)', ptPumped: '양수형 (열화 없음)',
+    lP: '정격출력', lD: '명목 방전시간', lDeff: '실효 방전시간', lDnom: '명목 방전시간',
+    basisL: '방전시간 기준', bEff: '실효 (계약 기준)', bNom: '명목 (설치 기준)', effS: '실효', nomS: '명목', basisWordE: '실효', basisWordN: '명목',
+    basisNoteE: '사업기간 마지막 해에도 매 사이클 보장해야 하는 방전시간입니다. 예를 들어 6시간 조건(2025년 제1차 중앙계약시장 육지 500MW·3,000MWh)으로 계약한 100MW 설비라면 실효 6h입니다. 필요한 명목 설치용량은 기술별 열화·방전깊이·방전효율로 역산합니다.',
+    basisNoteN: '처음 설치하는 저장용량 기준입니다. 국내 기준비용 사례(리튬이온 100MW·명목 8h, 양수발전 500MW·7h)와 같은 정의입니다. 이때 실효 방전시간은 기술마다 달라집니다.',
+    lCP: '출력부 투자비', lCE: '저장부 투자비', lOM: '고정 운영·유지비',
+    uKW: '원/kW', uKWh: '원/kWh', uKWy: '원/kW·년', uTimes: '회', uYr: '년', uDay: '%/일', uCyc: '%/회',
+    lCyc: '연간 운용횟수', lPel: '충전전력단가', lR: '실질 할인율',
+    lEta: '왕복효율', lDod: '평균 방전깊이(DoD)', lSelf: '자가방전율', lTc: '건설기간', lLifeY: '캘린더 수명', lLifeC: '사이클 수명', lDeg: '사이클당 열화율', lSohC: '사이클 수명 기준 말기 용량',
+    degNote: (a, c) => `사이클 수명·말기 용량과 연동됩니다. 연 ${c}회 운용 시 연간 약 ${a}% 용량이 줄어듭니다.`, degNoteP: '열화가 없는 것으로 계산합니다(말기 용량 100%).', degNotePump: '양수형은 열화가 없다고 보고 DoD·말기 용량을 100%로 고정합니다.',
+    advNote: '바꾼 항목에는 • 표시가 붙습니다. 사업기간은 캘린더 수명과 사이클 수명 중 짧은 쪽으로 정합니다(기술 수명 = 계약기간·사업기간으로 가정). 사이클당 열화율을 바꾸면 사이클 수명이 그에 맞게 다시 계산됩니다. 배터리 사이클 수명은 평균 DoD 80%, 말기 용량 80% 기준이며 NFPP의 말기 용량 80%는 가정값입니다. DoD에 따른 사이클 수명 변화는 반영하지 않습니다.',
+    resetAll: '기준값으로 초기화', useAuto: '자동 추정값으로 되돌리기',
+    stBase: '국내 기준비용', stGrid: '규모별 환산값', stInterp: '사례 사이 보간값', stOut: '자료 범위 밖 · 경계 사례값', stManual: '직접 입력값', stExplore: '탐색적 · LFP 비용 + 셀가격 차이', stSib: '소듐이온 기준사례',
+    noteBase: '국내에서 조사된 기준비용입니다.',
+    noteGrid: '국내 기준비용에 PNNL 데이터베이스의 규모별 상대비용계수를 곱해 환산한 값입니다.',
+    noteInterp: '인접한 사례들 사이를 로그-선형으로 보간한 값입니다.',
+    noteOut: '이 규모는 비용자료 범위 밖이라 가장 가까운 경계 사례의 비용을 그대로 썼습니다. 참고용이며, 실제 값을 직접 입력하기를 권합니다.',
+    noteManual: '직접 입력한 항목은 규모를 바꿔도 그대로 유지됩니다. 나머지 항목은 규모에 따라 자동으로 바뀝니다.',
+    noteCustom: '사용자 정의 기술은 비용과 파라미터를 모두 직접 입력합니다. 초기값은 LFP 100MW·8h입니다.',
+    noteSib: 'LFP 기준비용에서 셀가격 차이(52→59 $/kWh)만 반영한 소듐이온 공통 기준비용입니다.',
+    noteExplore: '소듐이온 비용은 100MW·8h 기준값만 있습니다. 이 값은 LFP의 규모별 비용에 셀가격 차이를 더한 탐색적 추정입니다.',
+    exNote: '탐색적 시나리오입니다. 소듐이온은 국내 비용자료가 충분하지 않아 LFP 비용에 셀가격 차이(52→59 $/kWh)를 더한 대용값을 씁니다. 왕복효율과 사이클 수명(NFPP는 캘린더 수명 포함)은 제조사 공개 자료를 바탕으로 했고(NMF 효율은 92%보다 보수적인 90%), 나머지 파라미터는 LFP·NCM 값을 준용합니다.',
+    cycNote: '명목 방전시간 10~24h 사이의 운용횟수는 기본값(10h 350회, 24h 140회)을 로그-선형으로 이은 이 도구의 가정입니다.',
+    explore: '탐색적', custom: '사용자 정의', tagIp: '보간', tagOut: '범위 밖',
+    sNom: '명목 설치용량', sEff: '실효 방전시간', sNomD: '필요 명목 방전시간', sOver: '오버사이징 배율', uOver: '× (명목÷실효)', sAnn: '연간 고정 방전량', sLife: '사업기간', sSoh: '사업 말기 잔존용량', sDod: '운전 말기 DoD',
+    lifeFmt: tc => `년 · 건설 ${tc}년 별도`,
+    subNoCharge: '충전비 제외 · 저장설비 자체 비용', subCharge: v => `충전비 포함 · 충전전력 ${v}원/kWh`,
+    subOut: '자료 범위 밖 규모 · 경계 사례 비용을 쓴 참고값입니다',
+    invalid: '입력값을 확인하세요. 표시된 칸의 값이 비어 있거나 범위를 벗어났습니다.',
+    invalidLife: '사업기간이 1년 미만입니다. 사이클 수명과 연간 운용횟수를 확인하세요.',
+    invalidDod: '사업 말기 DoD가 100%를 넘습니다. 평균 방전깊이를 낮추거나 사이클 수명 기준 말기 용량을 높이세요.',
+    invalidHours: '연간 충·방전 시간이 8,760시간을 넘습니다. 운용횟수나 방전시간을 확인하세요.',
+    ovT: '명목 vs 실효 방전시간: 오버사이징',
+    defEffT: '실효 방전시간 (계약 기준)', defEff: '사업기간 마지막 해에도 매 사이클 계통에 내보낼 수 있는 방전량 ÷ 정격출력입니다. 중앙계약시장의 방전시간 조건(2025년 제1차 입찰 6시간)이 이 값에 해당합니다.',
+    defNomT: '명목 방전시간 (설치 기준)', defNom: '처음 설치하는 저장용량 ÷ 정격출력입니다. 저장부 투자비는 이 용량에 비례합니다.',
+    dcEff: '실효 방전 (계통 공급)', dcEta: '방전효율 손실', dcDod: '방전깊이 한도로 남기는 용량', dcDeg: '열화로 줄어드는 용량', dcTot: '명목 합계',
+    dcNote: '설치한 명목 용량 가운데 사업기간 마지막 해까지 열화로 줄어드는 몫(1 − 말기 잔존용량), 그해에도 방전깊이 한도 때문에 쓰지 않는 몫, 방전 과정의 효율 손실을 빼고 남는 것이 실효 방전입니다.', dcNoteP: '양수발전은 열화와 방전깊이 제한이 없다고 보므로 명목 방전시간이 곧 실효 방전시간입니다.',
+    ovCapBn: (nom, fix, n, soh, dod, de, te) => `${nom} MWh를 설치하면 사업 ${n}년차 말에 남은 용량(초기의 ${soh}%) 중 ${dod}%를 방전하고 방전효율(${de}%)을 반영해 매 사이클 ${fix} MWh(실효 ${te} h)를 계통에 낼 수 있습니다. 이 방전량이 사업기간 내내 고정됩니다.`,
+    ovCapB: (nom, fix, n, soh, dod, de) => `${nom} MWh를 설치하지만 매 사이클 계통에 내보내는 방전량은 ${fix} MWh로 고정됩니다. 사업 ${n}년차 말에 남은 용량(초기의 ${soh}%) 중 ${dod}%를 방전하고 방전효율(${de}%)을 반영해도 이 양을 채우도록 규모가 정해집니다.`,
+    ovCapPc: (nom) => `양수형(열화 없음)으로 계산하므로 설치한 ${nom} MWh를 그대로 매 사이클 방전량으로 씁니다. 오버사이징 비용이 생기지 않습니다.`,
+    ovCapP: (nom) => `양수발전은 열화가 없다고 가정하므로 설치한 ${nom} MWh를 그대로 매 사이클 방전량으로 씁니다. 오버사이징 비용이 생기지 않습니다.`,
+    lgNom: '명목 설치용량', lgCap: '남은 저장용량 (열화 반영)', lgFix: '고정 방전량 (사이클당)',
+    axYear: '사업 연차', axMWh: 'MWh / 사이클',
+    bdT: 'LCOS 구성', pCP: '출력부 투자비', pCE: '저장부 투자비', pOM: '고정 운영·유지비', pEl: '충전비',
+    cmpT: '같은 규모의 기술 비교',
+    cmpCapE: '같은 정격출력·실효 방전시간에서 비교합니다. 모든 기술이 사업기간 마지막 해까지 같은 양을 방전하도록 맞춘 비교이며, 기술마다 필요한 명목 방전시간(작은 글씨)과 사업기간(기술 수명)이 다릅니다. 각 기술의 기준 파라미터·비용에 현재 운전·재무 조건을 적용했고, 선택한 기술은 현재 입력값 그대로입니다. 비용자료 범위 밖이거나 물리적으로 불가능한 조건(사업 말기 DoD 100% 초과 등)인 기술은 표시하지 않습니다.',
+    cmpCapN: '같은 정격출력·명목 방전시간(같은 설치용량)에서 비교합니다. 이 경우 기술마다 실제로 낼 수 있는 실효 방전시간(작은 글씨)이 달라 방전량이 같지 않습니다. 각 기술의 기준 파라미터·비용에 현재 운전·재무 조건을 적용했고, 선택한 기술은 현재 입력값 그대로입니다. 비용자료 범위 밖이거나 물리적으로 불가능한 조건인 기술은 표시하지 않습니다.',
+    cmpOnly: '이 규모에서 비용자료가 있는 다른 기술이 없습니다.',
+    senT: '민감도: 입력값을 ±20% 바꾸면',
+    senCap: '현재 사례에서 한 항목만 20% 낮추거나 높였을 때의 LCOS입니다. 막대는 기준 LCOS 대비 변화이며, 영향이 큰 항목부터 정렬했습니다. 왕복효율은 100%를 넘지 않게 제한했고, 물리적으로 불가능해지는 경우는 –로 표시합니다.',
+    senBase: v => `기준 ${v}`,
+    durT: '방전시간별 LCOS',
+    durCap: (P, b) => `정격출력 ${P} MW에서 ${b} 방전시간에 따른 기술별 LCOS입니다. 각 기술의 기준 파라미터·비용과 현재 충전전력단가·할인율을 쓰며, 연간 운용횟수는 명목 방전시간 기준 기본값(10h 이하 350회, 24h 140회, 그 사이는 도구 가정)을, 사업기간은 기술별 수명(캘린더·사이클 수명 중 짧은 쪽)을 따릅니다. 실효 기준에서 배터리 곡선이 실효 7~8h 부근에서 꺾이는 것은 필요 명목 방전시간이 10h를 넘어 운용횟수 가정이 줄어들기 때문입니다. 비용자료 범위 밖 구간은 그리지 않고, 소듐이온은 탐색적 시나리오로 점선 표시합니다. 그래프 위에 마우스를 올리거나 탭하면 값이 보입니다.`,
+    openFull: '새 창에서 크게 보기 ↗',
+    durNow: '현재 입력', axDur: '명목 방전시간 (h)', axDurE: '실효 방전시간 (h)', durNone: '이 정격출력에서는 비용자료가 있는 기술이 없습니다.',
+    na: '자료 없음',
+    names: { LFP: '리튬이온 LFP', NCM: '리튬이온 NCM', PSH: '양수발전', NMF: '소듐이온 NMF', NFPP: '소듐이온 NFPP', CUSTOM: '사용자 정의 기술' },
+    sub: { LFP: '리튬인산철', NCM: '니켈·코발트·망간 삼원계', PSH: '대용량·장주기', NMF: '', NFPP: '', CUSTOM: '비용·파라미터 모두 입력' },
+    mT: '계산 방법과 자료',
+    ptNote: '비용은 리튬이온·소듐이온 100MW·명목 8h, 양수발전 500MW·7h 기준입니다. 리튬이온·양수발전 파라미터는 안재균·임덕오(2025, Schmidt et al., 2019 기반), 소듐이온 파라미터는 제조사 공개 자료와 LFP·NCM 준용값입니다. 사이클당 열화율은 사이클 수명과 말기 용량 80%에서 계산한 값입니다. 실질 할인율 8%, 충전전력단가 0원/kWh가 기본 조건입니다.',
+    method: `
+      <div><h4>LCOS 정의</h4>
+      <div class="eq">LCOS = [CAPEX + Σ<sub>n</sub> (OPEX + P<sub>elec</sub>·E<sub>ch</sub>) / (1+r)<sup>n</sup>] ÷ Σ<sub>n</sub> E<sub>dis</sub> / (1+r)<sup>n</sup><br>n = T<sub>c</sub>+1 … T<sub>c</sub>+N,&nbsp; CAPEX = C<sub>P</sub>·P + C<sub>E</sub>·P·t<sub>nom</sub><br>E<sub>dis</sub> = P · t<sub>eff</sub> · cycles (매년 동일),&nbsp; E<sub>ch</sub> = E<sub>dis</sub>/η + P·t<sub>nom</sub>·σ·365</div>
+      <p style="margin-top:8px">투자비는 착공 시점에 한 번 발생하고, 운영비·충전비·방전량은 건설기간 이후 사업기간(상업운전 기간) 동안 할인합니다. 계약기간 내내 같은 계통 서비스를 제공한다는 계통운영자 관점에서 연간 방전량을 고정합니다. 사이클 수를 고정하고 방전량이 줄어드는 일반적인 LCOS(Schmidt et al., 2019)와 다른 점입니다.</p></div>
+      <div><h4>오버사이징과 실효 방전시간</h4>
+      <div class="eq">N (사업기간) = ⌊min(캘린더 수명, 사이클 수명 / 연간 운용횟수)⌋<br>δ = 1 − SOH<sub>cyc</sub><sup>1/사이클수명</sup>,&nbsp; SOH<sub>end</sub> = (1−δ)<sup>cycles·N</sup><br>DoD<sub>end</sub> = DoD̄ · ln(1/SOH<sub>end</sub>) / (1 − SOH<sub>end</sub>)<br>t<sub>eff</sub> = t<sub>nom</sub> · SOH<sub>end</sub> · DoD<sub>end</sub> · √η &nbsp;(양수: t<sub>eff</sub> = t<sub>nom</sub>)</div>
+      <p style="margin-top:8px">비용은 명목 설치용량(P·t<sub>nom</sub>)에, 방전량은 운전 말기에도 낼 수 있는 실효 방전시간에 연동됩니다. 열화가 지수적으로 진행한다고 보고, 생애주기 평균 DoD가 입력한 평균 DoD(기본 80%, 사이클 수명 시험조건)와 같아지도록 말기 DoD를 산정합니다. 사이클당 열화율 δ는 사이클 수명과 그 시점의 말기 용량(80%)에서 정해집니다(예: LFP 9,000회 → 0.002479%/회). 방전효율은 왕복효율의 제곱근으로 둡니다. 양수발전의 명목 방전시간은 실제 연속발전시간이므로 줄이지 않습니다.</p>
+      <p style="margin-top:8px">실효 기준(기본값)에서는 입력한 실효 방전시간을 맞추도록 t<sub>nom</sub> = t<sub>eff</sub> ÷ (SOH<sub>end</sub>·DoD<sub>end</sub>·√η)로 명목 방전시간을 역산하고, 그 명목 방전시간의 비용을 적용합니다. 중앙계약시장은 2025년 제1차 입찰에서 육지 500MW·3,000MWh(6시간)로 공고되었으며(안재균·임덕오, 2025), 약정한 방전용량을 계약기간 내내 유지해야 하므로 실효 기준이 이 시장의 조달 조건에 가깝습니다. 이 도구는 기술 수명(캘린더 수명과 사이클 수명 중 짧은 쪽)을 계약기간이자 사업기간으로 가정하므로, 실효 방전시간은 사업기간 마지막 해 기준입니다. 명목 기준은 설치용량을 직접 정하는 방식으로, 국내 기준비용 사례와 같은 정의입니다.</p></div>
+      <div><h4>비용 자료</h4><ul>
+        <li>국내 기준비용: 국내 비용 조사값(안재균·임덕오, 2025)을 씁니다. 출처에는 6시간 방전(오버사이징 비용 포함) 기준으로 제시되어 있으며, 이 도구는 이를 리튬이온 100MW·명목 8h(실효 LFP 약 5.7h, NCM 약 5.4h), 양수발전 500MW·7h 설치용량의 kWh당 단가로 적용합니다.</li>
+        <li>다른 출력·방전시간: PNNL Energy Storage Cost and Performance Database v2024에서 기준 조합 대비 목표 조합의 상대비용계수를 구해 국내 기준비용에 곱합니다. 절대 비용수준은 국내 자료가, 규모별 변화율은 PNNL 자료가 결정합니다.</li>
+        <li>사례 사이의 규모는 로그-선형으로 보간합니다. 범위 밖 규모는 가장 가까운 경계 사례의 비용을 그대로 쓰며, 화면에 경고가 표시됩니다.</li>
+        <li>소듐이온(탐색적): 출력부 투자비와 운영비는 LFP와 같고, 저장부 투자비는 LFP에 셀가격 차이 7 $/kWh(Wood Mackenzie, 2025; 2025년 평균 1,422.06원/$)를 더합니다. 소듐이온 비용은 100MW·8h 기준값만 있으며, 다른 규모는 이 도구가 LFP의 규모별 비용에 셀가격 차이를 더한 값입니다.</li>
+      </ul></div>
+      <div><h4>해석할 때 유의할 점</h4><ul>
+        <li>LCOS는 같은 조건에서 저장설비 자체 비용을 비교하는 지표입니다. 입찰가격, 정산단가, 시장수익이나 계통편익을 뜻하지 않습니다.</li>
+        <li>교체비, 해체비, 세금과 보조금은 포함하지 않습니다.</li>
+        <li>충전전력단가 85원/kWh는 2025년 월별 최저 SMP 80~90원/kWh를 감안한 보완분석 값입니다(안재균·임덕오, 2025). 자가방전은 충전비에만 영향을 주므로 충전전력단가가 0원이면 결과가 바뀌지 않습니다.</li>
+        <li>연간 운용횟수 기본값은 명목 방전시간 기준으로 정합니다. 실효 기준에서는 필요한 명목 방전시간과 운용횟수가 서로 맞물리므로 둘이 맞아떨어지는 값 중 가장 큰 운용횟수를 쓰고, 맞아떨어지는 값이 없는 드문 경우에는 가장 가까운 값을 씁니다. 2~10h 350회, 24h 140회입니다. 24h 사례의 LCOS는 140회 설정에 크게 좌우됩니다. 10~24h 사이 값은 이 도구의 가정입니다.</li>
+        <li>입찰조건 근거: 한국전력거래소(2025), 2025년 제1차 ESS 중앙계약시장 경쟁입찰 공고문, pp.21–22(안재균·임덕오, 2025에서 재인용).</li>
+      </ul></div>
+      <div style="grid-column:1/-1"><h4>기술별 기준 파라미터</h4><div class="ptable-wrap">__PTABLE__</div></div>
+      <div style="grid-column:1/-1"><h4>참고문헌</h4><ul>${REFS_KO}
+      </ul></div>`
+  },
+  en: {
+    eyebrow: 'Energy Innovation Lab · ESS economics tool',
+    h1: 'Levelized Cost of Storage Calculator for Korea',
+    n1: 'Jiseong Choi', n2: 'JongRoul Woo', affil: 'Graduate School of Energy and Environment & Department of Integrative Energy Engineering, Korea University',
+    lede: 'Calculates the lifetime cost of each kWh an energy storage system discharges, under the bidding rules of Korea\'s ESS central contract market. It starts from cases based on Korean base costs; you can change the size, costs and technical parameters yourself.',
+    r0: 'Central contract market',
+    r1b: 'Contracted capacity must be kept',
+    r2b: 'No added capacity during operation',
+    r3b: 'Oversize at the start',
+    ruleDesc: 'A winning bidder in Korea\'s ESS central contract market must keep its contracted discharge capacity (500 MW / 3,000 MWh, i.e. 6 hours, on the mainland in the 1st 2025 auction) for the whole contract term, and cannot reinforce or add capacity during operation. So the plant is built larger from the start, enough to deliver the contracted energy even in the final contract year. How much larger depends on each technology\'s degradation rate, depth-of-discharge limit and discharge efficiency. This calculator puts that oversizing cost into the LCOS and compares technologies on the same contracted discharge.',
+    gTech: 'Technology', gScale: 'Plant size', gCost: 'Costs', gOp: 'Operating and financial terms', gTechP: 'Technical parameters',
+    calcType: 'Model type', ptBattery: 'Battery (degradation, oversizing)', ptPumped: 'Pumped hydro (no degradation)',
+    lP: 'Rated power', lD: 'Nominal duration', lDeff: 'Effective duration', lDnom: 'Nominal duration',
+    basisL: 'Duration basis', bEff: 'Effective (contract)', bNom: 'Nominal (installed)', effS: 'eff.', nomS: 'nom.', basisWordE: 'effective', basisWordN: 'nominal',
+    basisNoteE: 'The duration that must still be delivered each cycle in the final project year. For example, a 100 MW plant contracted under the 6-hour condition (1st 2025 central contract market auction, 500 MW / 3,000 MWh on the mainland) has an effective duration of 6 h. The nominal capacity needed is back-calculated from each technology\'s degradation, depth of discharge and discharge efficiency.',
+    basisNoteN: 'Based on the storage capacity installed at the start. This is the same definition as the Korean base-cost cases (Li-ion 100 MW, nominal 8 h; pumped hydro 500 MW, 7 h). Effective duration then differs by technology.',
+    lCP: 'Power CAPEX', lCE: 'Energy CAPEX', lOM: 'Fixed O&M',
+    uKW: 'KRW/kW', uKWh: 'KRW/kWh', uKWy: 'KRW/kW-yr', uTimes: 'cycles', uYr: 'yr', uDay: '%/day', uCyc: '%/cycle',
+    lCyc: 'Cycles per year', lPel: 'Charging price', lR: 'Real discount rate',
+    lEta: 'Round-trip efficiency', lDod: 'Average depth of discharge', lSelf: 'Self-discharge', lTc: 'Construction time', lLifeY: 'Calendar life', lLifeC: 'Cycle life', lDeg: 'Degradation per cycle', lSohC: 'End-of-life capacity at cycle life',
+    degNote: (a, c) => `Linked to cycle life and end-of-life capacity. At ${c} cycles per year, capacity falls about ${a}% per year.`, degNoteP: 'No degradation (end-of-life capacity 100%).', degNotePump: 'Pumped-hydro mode assumes no degradation, so DoD and end-of-life capacity are fixed at 100%.',
+    advNote: 'Changed items are marked •. Project life is the shorter of calendar life and cycle life (technology life is assumed to equal the contract term and project life). Changing degradation per cycle recalculates cycle life. Battery cycle life refers to 80% average DoD and 80% end-of-life capacity; the 80% for NFPP is assumed. Changes in cycle life with DoD are not modeled.',
+    resetAll: 'Reset to defaults', useAuto: 'Revert to estimated values',
+    stBase: 'Korean base cost', stGrid: 'Scaled from base cost', stInterp: 'Interpolated between cases', stOut: 'Outside data range · edge case', stManual: 'Your input', stExplore: 'Exploratory · LFP cost + cell price gap', stSib: 'Sodium-ion reference case',
+    noteBase: 'Base cost surveyed in Korea.',
+    noteGrid: 'Korean base cost scaled with PNNL database relative cost factors for this size.',
+    noteInterp: 'Interpolated between the nearest cases (linear in log cost vs log size).',
+    noteOut: 'This size is outside the cost data, so the nearest edge case is used as is. Treat the result as indicative and enter your own values.',
+    noteManual: 'Items you entered stay fixed when the size changes. The other items still follow the size.',
+    noteCustom: 'For a custom technology, enter all costs and parameters. Starting values are LFP at 100 MW, 8 h.',
+    noteSib: 'Common sodium-ion base cost: the LFP base cost adjusted only for the cell price gap (52→59 $/kWh).',
+    noteExplore: 'Sodium-ion costs exist only for 100 MW, 8 h. This value adds the cell price gap to LFP costs at this size, as an exploratory estimate.',
+    exNote: 'Exploratory scenario. Korean cost data for sodium-ion are limited, so costs are LFP costs plus the cell price gap (52→59 $/kWh). Efficiency and cycle life (and NFPP calendar life) are based on manufacturer data (NMF efficiency set conservatively at 90%, below the stated 92%); other parameters follow LFP or NCM.',
+    cycNote: 'For nominal durations between 10 and 24 h, cycles are this tool\'s assumption, joining the defaults (350 at 10 h, 140 at 24 h) log-linearly.',
+    explore: 'Exploratory', custom: 'Custom', tagIp: 'Interp.', tagOut: 'Out of range',
+    sNom: 'Nominal capacity', sEff: 'Effective duration', sNomD: 'Nominal duration needed', sOver: 'Oversizing ratio', uOver: '× (nom./eff.)', sAnn: 'Fixed discharge / yr', sLife: 'Project life', sSoh: 'End-of-project capacity', sDod: 'End-of-operation DoD',
+    lifeFmt: tc => `yr · +${tc} yr build`,
+    subNoCharge: 'Excludes charging cost · storage plant only', subCharge: v => `Includes charging at ${v} KRW/kWh`,
+    subOut: 'Size outside the data range · indicative value using edge-case costs',
+    invalid: 'Check the highlighted inputs. A value is empty or out of range.',
+    invalidLife: 'Project life is under one year. Check cycle life and cycles per year.',
+    invalidDod: 'End-of-project DoD exceeds 100%. Lower the average depth of discharge or raise the end-of-life capacity at cycle life.',
+    invalidHours: 'Charging and discharging would take more than 8,760 hours a year. Check cycles per year or duration.',
+    ovT: 'Nominal vs effective duration: oversizing',
+    defEffT: 'Effective duration (contract)', defEff: 'Energy the plant can still deliver to the grid each cycle in the final project year, divided by rated power. The duration condition of the central contract market (6 h in the 1st 2025 auction) corresponds to this value.',
+    defNomT: 'Nominal duration (installed)', defNom: 'Storage capacity installed at the start, divided by rated power. Energy CAPEX scales with this capacity.',
+    dcEff: 'Effective discharge (to grid)', dcEta: 'Discharge efficiency loss', dcDod: 'Held back by DoD limit', dcDeg: 'Capacity lost to degradation', dcTot: 'Nominal total',
+    dcNote: 'Of the nominal capacity installed, take away the share lost to degradation by the final project year (1 − end capacity), the share still held back by the depth-of-discharge limit in that year, and the efficiency loss while discharging; what remains is the effective discharge.', dcNoteP: 'Pumped hydro is assumed to have no degradation or DoD limit, so nominal duration equals effective duration.',
+    ovCapBn: (nom, fix, n, soh, dod, de, te) => `With ${nom} MWh installed, discharging ${dod}% of the capacity left at the end of year ${n} (${soh}% of the original) at ${de}% discharge efficiency delivers ${fix} MWh per cycle (effective ${te} h). This discharge is held fixed over the project life.`,
+    ovCapB: (nom, fix, n, soh, dod, de) => `${nom} MWh is installed, but the discharge to the grid is fixed at ${fix} MWh per cycle. Sizing makes sure that at the end of year ${n}, discharging ${dod}% of the remaining capacity (${soh}% of the original) at ${de}% discharge efficiency still delivers this amount.`,
+    ovCapPc: (nom) => `Calculated as pumped-hydro type (no degradation), so all ${nom} MWh installed is discharged every cycle. No oversizing cost arises.`,
+    ovCapP: (nom) => `Pumped hydro is assumed not to degrade, so all ${nom} MWh installed is discharged every cycle. No oversizing cost arises.`,
+    lgNom: 'Nominal capacity', lgCap: 'Remaining capacity (degraded)', lgFix: 'Fixed discharge per cycle',
+    axYear: 'Project year', axMWh: 'MWh / cycle',
+    bdT: 'LCOS breakdown', pCP: 'Power CAPEX', pCE: 'Energy CAPEX', pOM: 'Fixed O&M', pEl: 'Charging',
+    cmpT: 'Technologies at the same size',
+    cmpCapE: 'Compared at the same rated power and effective duration: every technology is sized to deliver the same energy through the final project year; the nominal duration each needs (small text) and the project life (technology life) differ. Each uses its reference parameters and costs with the current operating and financial terms; the selected one uses your inputs. Technologies outside their cost data or under physically impossible conditions (e.g. end-of-project DoD above 100%) are not shown.',
+    cmpCapN: 'Compared at the same rated power and nominal duration (same installed capacity). Effective duration (small text) then differs by technology, so delivered energy is not equal. Each uses its reference parameters and costs with the current operating and financial terms; the selected one uses your inputs. Technologies outside their cost data or under physically impossible conditions are not shown.',
+    cmpOnly: 'No other technology has cost data at this size.',
+    senT: 'Sensitivity: inputs ±20%',
+    senCap: 'LCOS for the current case when a single input is lowered or raised by 20%. Bars show the change from the base LCOS, sorted by impact. Round-trip efficiency is capped at 100%; physically impossible cases show –.',
+    senBase: v => `Base ${v}`,
+    durT: 'LCOS by duration',
+    durCap: (P, b) => `LCOS by ${b} duration at ${P} MW rated power. Each technology uses its reference parameters and costs with the current charging price and discount rate; cycles per year follow the defaults by nominal duration (350 up to 10 h, 140 at 24 h, the tool's assumption in between) and project life is each technology's own life (shorter of calendar and cycle life). On the effective basis, the kink in battery curves around 7–8 h effective comes from the nominal duration needed passing 10 h, where the cycle assumption starts to fall. Ranges outside the cost data are not drawn; sodium-ion is dashed as an exploratory scenario. Hover over or tap the chart to see values.`,
+    openFull: 'Open in a new window ↗',
+    durNow: 'Current input', axDur: 'Nominal duration (h)', axDurE: 'Effective duration (h)', durNone: 'No technology has cost data at this rated power.',
+    na: 'No data',
+    names: { LFP: 'Lithium-ion LFP', NCM: 'Lithium-ion NCM', PSH: 'Pumped hydro', NMF: 'Sodium-ion NMF', NFPP: 'Sodium-ion NFPP', CUSTOM: 'Custom technology' },
+    sub: { LFP: 'Lithium iron phosphate', NCM: 'Nickel manganese cobalt', PSH: 'Large-scale, long-duration', NMF: '', NFPP: '', CUSTOM: 'Enter all costs and parameters' },
+    mT: 'Method and data',
+    ptNote: 'Costs are for Li-ion and sodium-ion at 100 MW, nominal 8 h and pumped hydro at 500 MW, 7 h. Li-ion and pumped-hydro parameters follow Ahn &amp; Lim (2025, based on Schmidt et al., 2019); sodium-ion parameters come from manufacturer data and LFP/NCM values. Degradation per cycle is derived from cycle life and 80% end-of-life capacity. Defaults: 8% real discount rate, 0 KRW/kWh charging price.',
+    method: `
+      <div><h4>LCOS definition</h4>
+      <div class="eq">LCOS = [CAPEX + Σ<sub>n</sub> (OPEX + P<sub>elec</sub>·E<sub>ch</sub>) / (1+r)<sup>n</sup>] ÷ Σ<sub>n</sub> E<sub>dis</sub> / (1+r)<sup>n</sup><br>n = T<sub>c</sub>+1 … T<sub>c</sub>+N,&nbsp; CAPEX = C<sub>P</sub>·P + C<sub>E</sub>·P·t<sub>nom</sub><br>E<sub>dis</sub> = P · t<sub>eff</sub> · cycles (same every year),&nbsp; E<sub>ch</sub> = E<sub>dis</sub>/η + P·t<sub>nom</sub>·σ·365</div>
+      <p style="margin-top:8px">Capital cost is incurred once at the start of construction; O&amp;M, charging cost and discharge are discounted over the project life (commercial operation after construction). Annual discharge is held constant, reflecting a system-operator view in which the plant provides the same service throughout the contract. This differs from the usual LCOS with fixed cycles and declining discharge (Schmidt et al., 2019).</p></div>
+      <div><h4>Oversizing and effective duration</h4>
+      <div class="eq">N (project life) = ⌊min(calendar life, cycle life / cycles per year)⌋<br>δ = 1 − SOH<sub>cyc</sub><sup>1/cycle life</sup>,&nbsp; SOH<sub>end</sub> = (1−δ)<sup>cycles·N</sup><br>DoD<sub>end</sub> = DoD̄ · ln(1/SOH<sub>end</sub>) / (1 − SOH<sub>end</sub>)<br>t<sub>eff</sub> = t<sub>nom</sub> · SOH<sub>end</sub> · DoD<sub>end</sub> · √η &nbsp;(pumped: t<sub>eff</sub> = t<sub>nom</sub>)</div>
+      <p style="margin-top:8px">Cost scales with nominal capacity (P·t<sub>nom</sub>); discharge scales with the effective duration the plant can still deliver at end of life. Degradation is exponential, and end-of-life DoD is set so that lifetime average DoD matches the entered average DoD (default 80%, the cycle-life test condition). Degradation per cycle δ follows from cycle life and the end-of-life capacity at that point (80%), e.g. LFP 9,000 cycles → 0.002479%/cycle. Discharge efficiency is the square root of round-trip efficiency. For pumped hydro the nominal duration is the actual continuous generation time, so it is not reduced.</p>
+      <p style="margin-top:8px">On the effective basis (default), the nominal duration is back-calculated as t<sub>nom</sub> = t<sub>eff</sub> ÷ (SOH<sub>end</sub>·DoD<sub>end</sub>·√η) to meet the entered effective duration, and the cost at that nominal duration is applied. The 1st 2025 central contract market auction was announced at 500 MW / 3,000 MWh (6 h) on the mainland (Ahn &amp; Lim, 2025); since the contracted discharge capacity must be kept for the whole contract term, the effective basis is closer to this market's procurement condition. This tool assumes the technology life (the shorter of calendar life and cycle life) is both the contract term and the project life, so effective duration refers to the final project year. The nominal basis sets installed capacity directly, the same definition as the Korean base-cost cases.</p></div>
+      <div><h4>Cost data</h4><ul>
+        <li>Korean base costs: surveyed Korean costs (Ahn &amp; Lim, 2025), presented in the source for 6-hour discharge including oversizing cost. This tool interprets and applies them per kWh of installed capacity for Li-ion at 100 MW, nominal 8 h (about 5.7 h effective for LFP, 5.4 h for NCM) and pumped hydro at 500 MW, 7 h.</li>
+        <li>Other sizes: relative cost factors from the PNNL Energy Storage Cost and Performance Database v2024, applied to the Korean base costs. Korean data set the cost level; PNNL data set how cost changes with size.</li>
+        <li>Sizes between cases are log-linearly interpolated. Sizes outside the data use the nearest edge case as is, and the page shows a warning.</li>
+        <li>Sodium-ion (exploratory): power CAPEX and O&amp;M equal LFP; energy CAPEX is LFP plus a 7 $/kWh cell price gap (Wood Mackenzie, 2025; 2025 average 1,422.06 KRW/$). Sodium-ion costs exist only for 100 MW, 8 h; for other sizes this tool adds the cell price gap to LFP costs at that size.</li>
+      </ul></div>
+      <div><h4>Reading the results</h4><ul>
+        <li>LCOS compares the cost of the storage plant itself under common conditions. It is not a bid price, settlement price, market revenue or system value.</li>
+        <li>Replacement, decommissioning, taxes and subsidies are excluded.</li>
+        <li>The 85 KRW/kWh charging price reflects 2025 monthly minimum SMPs of 80–90 KRW/kWh (Ahn &amp; Lim, 2025). Self-discharge only affects charging cost, so it has no effect at a charging price of 0.</li>
+        <li>Default cycles are keyed to nominal duration. On the effective basis the nominal duration needed and the cycles depend on each other, so the largest self-consistent cycle count is used (or the closest one in the rare case none is exactly consistent): 350 per year for 2–10 h and 140 for 24 h. The 24 h results depend heavily on the 140-cycle setting. Values between 10 and 24 h are this tool's assumption.</li>
+        <li>Market rule source: Korea Power Exchange (2025), 1st 2025 ESS central contract market auction notice, pp. 21–22 (as cited in Ahn &amp; Lim, 2025).</li>
+      </ul></div>
+      <div style="grid-column:1/-1"><h4>Reference parameters by technology</h4><div class="ptable-wrap">__PTABLE__</div></div>
+      <div style="grid-column:1/-1"><h4>References</h4><ul>${REFS_EN}
+      </ul></div>`
+  }
+};
+
+/* ---------- LCOS engine ---------- */
+function computeLCOS(x) {
+  const deg = 1 - Math.pow(x.sohC, 1 / x.lifeC);
+  const nOp = x.nFix > 0 ? x.nFix : Math.floor(Math.min(x.lifeY, x.lifeC / x.cyc));
+  const sohP = Math.pow(1 - deg, x.cyc * nOp);
+  let eolDod;
+  if (x.pumped) eolDod = 1;
+  else if (Math.abs(1 - sohP) < 1e-9) eolDod = x.dod;
+  else eolDod = x.dod * Math.log(1 / sohP) / (1 - sohP);
+  const dEff = x.pumped ? x.dNom : x.dNom * sohP * eolDod * Math.sqrt(x.eta);
+  const eCap = x.P * x.dNom;
+  const eDis = x.P * dEff * x.cyc;
+  const eCh = eDis / x.eta + eCap * x.self * 365;
+  const capexP = x.P * x.cp, capexE = eCap * x.ce;
+  const opex = x.P * x.om;
+  const nProj = nOp + x.tc;
+  let pvE = 0, pvOM = 0, pvEl = 0;
+  for (let n = x.tc + 1; n <= nProj; n++) {
+    const f = 1 / Math.pow(1 + x.r, n);
+    pvE += f * eDis; pvOM += f * opex; pvEl += f * x.pel * eCh;
+  }
+  const soh = [];
+  for (let k = 0; k <= nOp; k++) soh.push(Math.pow(1 - deg, x.cyc * k));
+  const lcos = (capexP + capexE + pvOM + pvEl) / pvE;
+  return { lcos, nOp, nProj, sohP, eolDod, dEff, eCap, eDis, soh,
+    parts: { cp: capexP / pvE, ce: capexE / pvE, om: pvOM / pvE, el: pvEl / pvE } };
+}
+
+/* ---------- cost lookup with log-linear interpolation ---------- */
+const G = {};
+for (const k in GRID) {
+  const rows = GRID[k];
+  const Ps = [...new Set(rows.map(r => r[0]))].sort((a, b) => a - b);
+  const Ds = [...new Set(rows.map(r => r[1]))].sort((a, b) => a - b);
+  const map = {};
+  rows.forEach(r => { map[r[0] + '|' + r[1]] = { cp: r[2], ce: r[3], om: r[4] }; });
+  G[k] = { Ps, Ds, map };
+}
+function li(xs, ys, x) {
+  const n = xs.length;
+  if (x <= xs[0]) return { v: ys[0], out: x < xs[0] };
+  if (x >= xs[n - 1]) return { v: ys[n - 1], out: x > xs[n - 1] };
+  let i = 0; while (xs[i + 1] < x) i++;
+  const t = (Math.log(x) - Math.log(xs[i])) / (Math.log(xs[i + 1]) - Math.log(xs[i]));
+  return { v: Math.exp(Math.log(ys[i]) + t * (Math.log(ys[i + 1]) - Math.log(ys[i]))), out: false };
+}
+function gridCost(k, P, d) {
+  const g = G[k], res = {}; let out = false;
+  for (const item of ['cp', 'ce', 'om']) {
+    const rowVals = g.Ps.map(p => { const r = li(g.Ds, g.Ds.map(dd => g.map[p + '|' + dd][item]), d); out = out || r.out; return r.v; });
+    const r2 = li(g.Ps, rowVals, P); out = out || r2.out; res[item] = r2.v;
+  }
+  const exact = g.Ps.includes(P) && g.Ds.includes(d);
+  res.status = out ? 'out' : exact ? 'grid' : 'interp';
+  return res;
+}
+const BASE = { LFP: [100, 8], NCM: [100, 8], PSH: [500, 7] };
+function autoCost(key, P, d) {
+  const t = TECH[key];
+  if (t.custom) return null;
+  if (t.derive) {
+    const b = gridCost(t.derive, P, d); b.ce += t.ceAdd;
+    b.status = (P === 100 && d === 8) ? 'sib' : b.status === 'out' ? 'out' : 'explore';
+    return b;
+  }
+  const c = gridCost(t.grid, P, d);
+  if (c.status === 'grid' && BASE[key][0] === P && BASE[key][1] === d) c.status = 'base';
+  return c;
+}
+function autoCycles(d) {
+  if (d <= 10) return 350;
+  if (d >= 24) return 140;
+  return li([10, 24], [350, 140], d).v;
+}
+
+/* ---------- state ---------- */
+const S = { lang: 'ko', basis: 'eff', lifeMode: 'tech', contract: 15, tech: 'LFP', P: 100, d: 6, man: { cp: false, ce: false, om: false }, autoStatus: 'base', cycAuto: true, cyc: 350, pel: 0, r: 8, cost: {}, p: {}, pumped: false };
+const COSTS = ['cp', 'ce', 'om'];
+const anyMan = () => COSTS.some(k => S.man[k]);
+function loadTech(key) {
+  S.tech = key;
+  S.p = { ...TECH[key].p };
+  S.pumped = TECH[key].pumped;
+  S.man = { cp: false, ce: false, om: false };
+  if (TECH[key].custom) {
+    const c = gridCost('LFP', 100, 8);
+    S.cost = { cp: c.cp, ce: c.ce, om: c.om };
+    S.basis = S.basis || 'eff';
+    S.man = { cp: true, ce: true, om: true };
+    S.autoStatus = 'manual';
+  } else refreshCost();
+}
+// k = effective / nominal duration ratio for a parameter set (percent units, as in S.p)
+function kFactor(p, cyc, pumped, nFix) {
+  if (pumped) return 1;
+  const sohC = p.sohC / 100, dod = p.dod / 100, eta = p.eta / 100;
+  const deg = 1 - Math.pow(sohC, 1 / p.lifeC);
+  const nOp = nFix > 0 ? nFix : Math.floor(Math.min(p.lifeY, p.lifeC / cyc));
+  const sohP = Math.pow(1 - deg, cyc * nOp);
+  const eol = Math.abs(1 - sohP) < 1e-9 ? dod : dod * Math.log(1 / sohP) / (1 - sohP);
+  return sohP * eol * Math.sqrt(eta);
+}
+// nominal duration needed for input duration dIn under the selected basis
+// resolve nominal duration and cycles; cycMan = null means default cycles keyed to nominal duration
+const nFixed = () => S.lifeMode === 'contract' ? S.contract : 0;
+function resolveDur(p, pumped, dIn, cycMan, nFix) {
+  if (nFix === undefined) nFix = nFixed();
+  if (S.basis !== 'eff') return { dNom: dIn, cyc: cycMan === null ? autoCycles(dIn) : cycMan };
+  const dn = c => { const k = kFactor(p, c, pumped, nFix); return k > 0 && isFinite(k) ? dIn / k : NaN; };
+  if (cycMan !== null) return { dNom: dn(cycMan), cyc: cycMan };
+  // default cycles depend on the nominal duration, which depends on cycles: take the largest self-consistent value
+  const h = c => { const n = dn(c); return isFinite(n) ? autoCycles(n) - c : NaN; };
+  const h350 = h(350);
+  if (h350 >= 0) return { dNom: dn(350), cyc: 350 };
+  let prev = 350, hp = h350, best = 350, bg = isFinite(h350) ? Math.abs(h350) : Infinity;
+  for (let c = 349.5; c >= 140; c -= 0.5) {
+    const hc = h(c);
+    if (!isFinite(hc)) continue;
+    if (Math.abs(hc) < bg) { bg = Math.abs(hc); best = c; }
+    if (hc >= 0 && hp < 0) {
+      let lo = c, hi = prev;
+      for (let i = 0; i < 50; i++) { const m = (lo + hi) / 2; if (h(m) >= 0) lo = m; else hi = m; }
+      const hl = h(lo);
+      if (Math.abs(hl) < 1e-6) return { dNom: dn(lo), cyc: lo };
+      if (Math.abs(hl) < bg) { bg = Math.abs(hl); best = lo; }
+    }
+    prev = c; hp = hc;
+  }
+  return isFinite(bg) ? { dNom: dn(best), cyc: best } : { dNom: NaN, cyc: 350 };
+}
+// build engine inputs; o = { cyc, cost, man, pumped, d }
+function buildX(key, p, o) {
+  const dIn = o.d === undefined ? S.d : o.d;
+  const nF = o.nFix === undefined ? nFixed() : o.nFix;
+  const rs = resolveDur(p, o.pumped, dIn, o.cyc === undefined ? null : o.cyc, nF);
+  const dNom = rs.dNom;
+  const auto = isFinite(dNom) ? autoCost(key, S.P, dNom) : null;
+  const cost = {};
+  COSTS.forEach(f => { cost[f] = (o.man && o.man[f]) || !auto ? (o.cost ? o.cost[f] : NaN) : auto[f]; });
+  const x = {
+    P: S.P * 1000, dNom, cyc: rs.cyc, pel: S.pel, r: S.r / 100,
+    eta: p.eta / 100, dod: p.dod / 100, self: p.self / 100, tc: p.tc, lifeY: p.lifeY, lifeC: p.lifeC, sohC: p.sohC / 100,
+    cp: cost.cp, ce: cost.ce, om: cost.om, pumped: o.pumped, nFix: nF
+  };
+  if (x.pumped) { x.dod = 1; x.sohC = 1; }
+  return { x, auto, status: auto ? auto.status : 'manual' };
+}
+const curCyc = () => S.cycAuto ? undefined : S.cyc;
+function refreshCost() {
+  const rs = resolveDur(S.p, S.pumped, S.d, S.cycAuto ? null : S.cyc);
+  if (S.cycAuto) S.cyc = rs.cyc;
+  const n = rs.dNom;
+  if (!isFinite(n)) return;
+  const c = autoCost(S.tech, S.P, n);
+  if (!c) return;
+  COSTS.forEach(k => { if (!S.man[k]) S.cost[k] = c[k]; });
+  S.autoStatus = c.status;
+}
+function inputsFor(key, useCurrent) {
+  if (useCurrent) return buildX(S.tech, S.p, { cyc: curCyc(), cost: S.cost, man: S.man, pumped: S.pumped }).x;
+  const t = TECH[key];
+  return buildX(key, t.p, { cyc: curCyc(), cost: null, man: {}, pumped: t.pumped }).x;
+}
+// returns list of field ids that are invalid ([] if all fine)
+function badFields() {
+  const bad = [];
+  const v = id => pnum($(id).value);
+  const pos = ['P', 'd', 'cyc', 'eta', 'dod', 'lifeY', 'lifeC', 'sohC'];
+  const nonneg = ['cp', 'ce', 'om', 'pel', 'r', 'self', 'tc'];
+  pos.forEach(id => { const x = v(id); if (!isFinite(x) || x <= 0) bad.push(id); });
+  nonneg.forEach(id => { const x = v(id); if (!isFinite(x) || x < 0) bad.push(id); });
+  ['eta', 'dod', 'sohC'].forEach(id => { if (v(id) > 100 && !bad.includes(id)) bad.push(id); });
+  if (!Number.isInteger(v('tc')) && !bad.includes('tc')) bad.push('tc');
+  if (!$('deg').disabled) { const x = v('deg'); if (!(x > 0 && x < 100)) bad.push('deg'); }
+  if (S.lifeMode === 'contract') { const c = v('contract'); if (!(Number.isInteger(c) && c >= 1 && c <= 60)) bad.push('contract'); }
+  else if (!bad.length && Math.floor(Math.min(v('lifeY'), v('lifeC') / v('cyc'))) < 1) bad.push('lifeC', 'cyc', 'lifeY', '__life');
+  return bad;
+}
+
+/* ---------- formatting ---------- */
+const pnum = s => { const t = String(s).replace(/,/g, '').trim(); return /^-?\d+(\.\d+)?$|^-?\.\d+$/.test(t) ? Number(t) : NaN; };
+const $ = id => document.getElementById(id);
+const T = k => I18N[S.lang][k];
+const fmt = (v, dg = 0) => v.toLocaleString(S.lang === 'ko' ? 'ko-KR' : 'en-US', { minimumFractionDigits: dg, maximumFractionDigits: dg });
+const fmtA = v => fmt(v, Number.isInteger(v) ? 0 : Math.abs(Math.round(v * 10) - v * 10) < 1e-9 ? 1 : 2);
+const fmtMWh = v => fmt(v, v < 10 ? 2 : v < 100 ? 1 : 0);
+const round = (v, dg) => Math.round(v * 10 ** dg) / 10 ** dg;
+
+/* ---------- static UI ---------- */
+function buildTechButtons() {
+  const fk = document.activeElement && document.activeElement.closest && document.activeElement.closest('#techs .tech') ? document.activeElement.dataset.k : null;
+  $('techs').innerHTML = ORDER.map(k => `<button type="button" class="tech" data-k="${k}" aria-pressed="${S.tech === k}">
+    <span>${T('names')[k]}</span><small>${TECH[k].explore ? `<span class="tag-ex">${T('explore')}</span>` : T('sub')[k]}</small></button>`).join('');
+  $('techs').querySelectorAll('.tech').forEach(b => b.onclick = () => { loadTech(b.dataset.k); syncForm(); render(); });
+  if (fk) { const b = $('techs').querySelector(`[data-k="${fk}"]`); if (b) b.focus(); }
+}
+function chipRow(id, vals, cur, onPick, fmtv) {
+  const ae = document.activeElement, fv = ae && ae.parentNode && ae.parentNode.id === id ? ae.dataset.v : null;
+  $(id).innerHTML = vals.map(v => `<button type="button" class="chip" data-v="${v}" aria-pressed="${v === cur}">${fmtv ? fmtv(v) : v}</button>`).join('');
+  $(id).querySelectorAll('.chip').forEach(b => b.onclick = () => onPick(parseFloat(b.dataset.v)));
+  if (fv !== null) { const b = $(id).querySelector(`[data-v="${fv}"]`); if (b) b.focus(); }
+}
+function buildChips() {
+  const g = G[TECH[S.tech].grid || TECH[S.tech].derive || 'LFP'];
+  chipRow('chipsP', g.Ps, S.P, v => { S.P = v; refreshCost(); syncForm(); render(); }, v => fmt(v));
+  const effBat = S.basis === 'eff' && !(TECH[S.tech].pumped || S.pumped);
+  chipRow('chipsD', effBat ? [2, 4, 6, 8, 10, 12] : g.Ds, S.d, v => { S.d = v; refreshCost(); syncForm(); render(); }, v => v + 'h');
+  chipRow('chipsPel', [0, 85], S.pel, v => { S.pel = v; syncForm(); render(); }, v => v + (S.lang === 'ko' ? '원' : ' KRW'));
+}
+function ptable() {
+  const ks = ['LFP', 'NCM', 'NMF', 'NFPP', 'PSH'];
+  const L = I18N[S.lang];
+  const rows = [['lEta', 'eta', '%'], ['lDod', 'dod', '%'], ['lSelf', 'self', L.uDay], ['lTc', 'tc', L.uYr], ['lLifeY', 'lifeY', L.uYr], ['lLifeC', 'lifeC', L.uTimes], ['lSohC', 'sohC', '%']];
+  const degOf = p => (1 - Math.pow(p.sohC / 100, 1 / p.lifeC)) * 100;
+  let h = `<table class="pt"><thead><tr><th></th>${ks.map(k => `<th>${L.names[k]}</th>`).join('')}</tr></thead><tbody>`;
+  rows.forEach(([lab, key, u]) => { h += `<tr><td>${L[lab]} · ${u}</td>${ks.map(k => `<td>${fmt(TECH[k].p[key], key === 'self' ? 3 : 0)}</td>`).join('')}</tr>`; });
+  h += `<tr><td>${L.lDeg} · ${L.uCyc}</td>${ks.map(k => `<td>${k === 'PSH' ? '0' : fmt(sig4(degOf(TECH[k].p)), 6)}</td>`).join('')}</tr>`;
+  const c = k => autoCost(k, k === 'PSH' ? 500 : 100, k === 'PSH' ? 7 : 8);
+  [['lCP', 'cp', L.uKW], ['lCE', 'ce', L.uKWh], ['lOM', 'om', L.uKWy]].forEach(([lab, key, u]) => {
+    h += `<tr><td>${L[lab]} · ${u}</td>${ks.map(k => `<td>${fmt(c(k)[key])}</td>`).join('')}</tr>`;
+  });
+  h += `</tbody></table><p class="note" style="margin-top:6px">${L.ptNote}</p>`;
+  return h;
+}
+function applyLang() {
+  document.documentElement.lang = S.lang;
+  document.title = S.lang === 'ko' ? 'ESS LCOS 계산기 · Energy Innovation Lab' : 'Korea ESS LCOS Calculator · Energy Innovation Lab';
+  document.querySelectorAll('[data-i]').forEach(el => { const v = T(el.dataset.i); if (typeof v === 'string') el.textContent = v; });
+  $('lang-ko').setAttribute('aria-pressed', S.lang === 'ko');
+  $('lang-en').setAttribute('aria-pressed', S.lang === 'en');
+  $('pumped').options[0].textContent = T('ptBattery');
+  $('pumped').options[1].textContent = T('ptPumped');
+  $('mBody').innerHTML = T('method').replace('__PTABLE__', ptable());
+  buildTechButtons(); buildChips(); render();
+}
+
+/* ---------- form sync ---------- */
+const PFIELDS = ['eta', 'dod', 'self', 'tc', 'lifeY', 'lifeC', 'sohC'];
+function syncForm() {
+  $('P').value = S.P; $('d').value = round(S.d, 2);
+  COSTS.forEach(k => { $(k).value = fmtInt(S.man[k] ? S.cost[k] : Math.round(S.cost[k])); });
+  $('cyc').value = round(S.cyc, 1); $('pel').value = S.pel; $('r').value = S.r;
+  PFIELDS.forEach(k => { $(k).value = k === 'lifeC' ? round(S.p[k], 0) : S.p[k]; });
+  syncDeg(true);
+  $('pumped').value = S.pumped ? '1' : '0';
+  ['eff', 'nom'].forEach(bs => $('basis-' + bs).setAttribute('aria-pressed', S.basis === bs));
+  buildTechButtons(); buildChips();
+}
+function softSync() {
+  const a = document.activeElement && document.activeElement.id;
+  const set = (id, v) => { if (a !== id) $(id).value = v; };
+  COSTS.forEach(k => set(k, fmtInt(S.man[k] ? S.cost[k] : Math.round(S.cost[k])))); set('cyc', round(S.cyc, 1));
+  buildChips();
+}
+const num = id => pnum($(id).value);
+function degPct() {
+  const s = S.p.sohC / 100;
+  if (!(s > 0 && s < 1) || !(S.p.lifeC > 0)) return null;
+  return (1 - Math.pow(s, 1 / S.p.lifeC)) * 100;
+}
+const sig4 = v => Number(v.toPrecision(4));
+const fmtInt = v => v.toLocaleString('en-US', { maximumFractionDigits: 2 });
+function syncDeg(force) {
+  const el = $('deg'), dg = degPct();
+  el.disabled = dg === null || S.pumped;
+  $('dod').disabled = S.pumped; $('sohC').disabled = S.pumped;
+  if (force || document.activeElement !== el) el.value = (dg === null || S.pumped) ? 0 : sig4(dg);
+}
+function bindInputs() {
+  $('P').oninput = () => { const v = num('P'); if (v > 0) { S.P = v; refreshCost(); softSync(); } render(); };
+  $('d').oninput = () => { const v = num('d'); if (v > 0) { S.d = v; refreshCost(); softSync(); } render(); };
+  COSTS.forEach(k => {
+    $(k).oninput = () => { const v = num(k); S.man[k] = true; if (v >= 0) S.cost[k] = v; render(); };
+    $(k).onblur = () => { const v = num(k); if (v >= 0) $(k).value = fmtInt(v); };
+  });
+  $('cyc').oninput = () => { const v = num('cyc'); if (v > 0) { S.cyc = v; S.cycAuto = false; refreshCost(); softSync(); } render(); };
+  $('pel').oninput = () => { const v = num('pel'); if (v >= 0) { S.pel = v; buildChips(); } render(); };
+  $('r').oninput = () => { const v = num('r'); if (v >= 0) S.r = v; render(); };
+  PFIELDS.forEach(k => $(k).oninput = () => { const v = num(k); if (isFinite(v)) { S.p[k] = v; refreshCost(); softSync(); } syncDeg(false); render(); });
+  $('deg').oninput = () => {
+    const v = num('deg'), s = S.p.sohC / 100;
+    if (v > 0 && v < 100 && s > 0 && s < 1) {
+      const ref = TECH[S.tech].p;
+      const refDeg = (1 - Math.pow(ref.sohC / 100, 1 / ref.lifeC)) * 100;
+      S.p.lifeC = (S.p.sohC === ref.sohC && Math.abs(v - refDeg) / refDeg < 0.002) ? ref.lifeC : Math.max(1, Math.round(Math.log(s) / Math.log(1 - v / 100)));
+      $('lifeC').value = S.p.lifeC;
+      refreshCost(); softSync();
+    }
+    render();
+  };
+  $('pumped').onchange = () => {
+    S.pumped = $('pumped').value === '1';
+    if (S.pumped) { S.prevBat = { dod: S.p.dod, sohC: S.p.sohC }; S.p.dod = 100; S.p.sohC = 100; }
+    else { const pb = S.prevBat || TECH.CUSTOM.p; S.p.dod = pb.dod; S.p.sohC = pb.sohC; }
+    refreshCost(); syncForm(); render();
+  };
+  $('costReset').onclick = () => { S.man = { cp: false, ce: false, om: false }; refreshCost(); syncForm(); render(); };
+  $('resetAll').onclick = () => {
+    S.cycAuto = true; S.pel = 0; S.r = 8;
+    const k = S.tech === 'CUSTOM' ? 'LFP' : S.tech;
+    S.basis = 'eff';
+    [S.P, S.d] = k === 'PSH' ? [500, 7] : [100, 6];
+    loadTech(k); syncForm(); render();
+  };
+  ['eff', 'nom'].forEach(bs => { $('basis-' + bs).onclick = () => {
+    if (S.basis === bs) return;
+    // keep the same plant: convert the duration to the other basis
+    if (badFields().length || !lastR || !lastX) return;
+    S.d = bs === 'eff' ? lastR.dEff : lastX.dNom;
+    S.basis = bs;
+    refreshCost(); syncForm(); render();
+  }; });
+  $('lang-ko').onclick = () => { S.lang = 'ko'; applyLang(); };
+  $('lang-en').onclick = () => { S.lang = 'en'; applyLang(); };
+  $('form').onsubmit = e => e.preventDefault();
+  let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(render, 120); });
+}
+
+/* ---------- render ---------- */
+let lastR = null, lastX = null;
+function render() {
+  const t = TECH[S.tech];
+  // cost status
+  const st = t.custom ? 'manual' : anyMan() ? 'manual' : S.autoStatus;
+  const stKey = { base: 'stBase', grid: 'stGrid', interp: 'stInterp', out: 'stOut', manual: 'stManual', explore: 'stExplore', sib: 'stSib' }[st];
+  const noteKey = t.custom ? 'noteCustom' : { base: 'noteBase', grid: 'noteGrid', interp: 'noteInterp', out: 'noteOut', manual: 'noteManual', explore: 'noteExplore', sib: 'noteSib' }[st];
+  $('costStatus').className = 'status st-' + ({ base: 'grid', sib: 'grid' }[st] || st);
+  $('costStatus').textContent = T(stKey);
+  let note = T(noteKey);
+  if (st === 'manual' && !t.custom && S.autoStatus === 'out' && !COSTS.every(k => S.man[k])) note += ' ' + T('noteOut');
+  $('costNote').textContent = note;
+  $('costReset').hidden = t.custom || !anyMan();
+  $('exNote').hidden = !t.explore; $('exNote').textContent = T('exNote');
+  $('f-pumped').hidden = !t.custom;
+  { const dn = resolveDur(S.p, S.pumped, S.d, S.cycAuto ? null : S.cyc).dNom; $('cycNote').hidden = !(S.cycAuto && dn > 10 && dn < 24); }
+  $('cycNote').textContent = T('cycNote');
+  const dg = degPct();
+  $('degNote').textContent = S.pumped ? T('degNotePump') : S.p.sohC === 100 ? T('degNoteP') : dg === null ? '' : T('degNote')(fmt((1 - Math.pow(1 - dg / 100, S.cyc)) * 100, 2), fmt(S.cyc));
+  $('f-deg').classList.toggle('changed', !t.custom && (S.p.lifeC !== t.p.lifeC || S.p.sohC !== t.p.sohC));
+  // changed markers
+  PFIELDS.forEach(k => $('f-' + k).classList.toggle('changed', !t.custom && S.p[k] !== t.p[k]));
+  $('f-cyc').classList.toggle('changed', !S.cycAuto);
+  $('f-pel').classList.toggle('changed', S.pel !== 0);
+  $('f-r').classList.toggle('changed', S.r !== 8);
+  COSTS.forEach(k => $('f-' + k).classList.toggle('changed', !t.custom && S.man[k]));
+
+  const bad = badFields();
+  let x = null, R = null, why = bad.includes('__life') ? 'invalidLife' : 'invalid';
+  if (!bad.length) {
+    x = inputsFor(S.tech, true);
+    if (!isFinite(x.dNom) || ![x.cp, x.ce, x.om].every(isFinite)) { bad.push('d'); why = 'invalid'; x = null; }
+    else R = computeLCOS(x);
+  }
+  if (!bad.length && x) {
+    if (!x.pumped && R.eolDod > 1 + 1e-9) { bad.push('dod', 'sohC'); why = 'invalidDod'; }
+    else if (R.dEff * x.cyc * (1 + 1 / x.eta) > 8760) { bad.push('cyc', 'd'); why = 'invalidHours'; }
+  }
+  document.querySelectorAll('.field input').forEach(i => { const b = bad.includes(i.id); i.classList.toggle('bad', b); i.setAttribute('aria-invalid', b); });
+  const pP = pnum($('P').value), pD = pnum($('d').value);
+  $('caseLine').textContent = `${T('names')[S.tech]} · ${pP > 0 ? fmtA(pP) : '–'} MW · ${T(S.basis === 'eff' ? 'effS' : 'nomS')} ${pD > 0 ? fmtA(pD) : '–'} h`;
+  $('lDtxt').textContent = T(S.basis === 'eff' ? 'lDeff' : 'lDnom');
+  $('basisNote').textContent = T(S.basis === 'eff' ? 'basisNoteE' : 'basisNoteN');
+  $('cmpCap').textContent = T(S.basis === 'eff' ? 'cmpCapE' : 'cmpCapN');
+  $('miniU').textContent = T('uKWh'); $('miniC').textContent = $('caseLine').textContent;
+  const dimEls = [$('stats'), $('ovCard'), $('bdCard'), $('cmpCard'), $('senCard'), $('durCard')];
+  const hero = $('hero');
+  if (bad.length) {
+    hero.classList.remove('warn'); $('mini').classList.remove('warn');
+    $('lcos').textContent = '–'; $('miniV').textContent = '–';
+    $('lcosSub').textContent = T(why);
+    ['stats', 'ovChart', 'ovLegend', 'stack', 'parts', 'cmp', 'sen', 'durChart', 'durLegend'].forEach(id => { $(id).innerHTML = ''; });
+    $('durCap').textContent = ''; $('durTip').hidden = true;
+    $('ovCap').textContent = '';
+    dimEls.forEach(e => e.classList.add('dim'));
+    return;
+  }
+  dimEls.forEach(e => e.classList.remove('dim'));
+  const outWarn = !t.custom && S.autoStatus === 'out' && !COSTS.every(k => S.man[k]);
+  hero.classList.toggle('warn', outWarn); $('mini').classList.toggle('warn', outWarn);
+  $('lcos').textContent = fmt(R.lcos, 1);
+  $('miniV').textContent = fmt(R.lcos, 1);
+  $('lcosSub').textContent = outWarn ? T('subOut') : S.pel > 0 ? T('subCharge')(fmtA(S.pel)) : T('subNoCharge');
+  const stat = (l, v, u) => `<div class="stat"><span>${l}</span><b>${v}<small>${u}</small></b></div>`;
+  const gwh = R.eDis / 1e6;
+  $('stats').innerHTML =
+    stat(T('sNom'), fmtMWh(R.eCap / 1000), 'MWh') +
+    (S.basis === 'eff' ? stat(T('sNomD'), fmt(x.dNom, 2), 'h') : stat(T('sEff'), fmt(R.dEff, 2), 'h')) +
+    stat(T('sOver'), fmt(x.dNom / R.dEff, 2), T('uOver')) +
+    stat(T('sAnn'), gwh < 1 ? fmtMWh(R.eDis / 1000) : fmt(gwh, gwh < 10 ? 2 : 1), gwh < 1 ? 'MWh' : 'GWh') +
+    stat(T('sLife'), fmt(R.nOp), T('lifeFmt')(x.tc)) +
+    stat(T('sSoh'), fmt(R.sohP * 100, 1), '%');
+  lastR = R; lastX = x;
+  drawOversize(R, x);
+  const parts = [['cp', 'pCP', '--c1'], ['ce', 'pCE', '--c2'], ['om', 'pOM', '--c3'], ['el', 'pEl', '--c4']];
+  $('stack').innerHTML = parts.map(([k, , c]) => `<div style="width:${R.parts[k] / R.lcos * 100}%;background:var(${c})"></div>`).join('');
+  $('parts').innerHTML = `<div class="part part-h"><span></span><span></span><span class="pv">${T('uKWh')}</span><span class="pp">${S.lang === 'ko' ? '비중' : 'Share'}</span></div>` + parts.map(([k, l, c]) => `<div class="part"><span class="sw" style="background:var(${c})"></span><span>${T(l)}</span><span class="pv">${fmt(R.parts[k], 1)}</span><span class="pp">${fmt(R.parts[k] / R.lcos * 100, 0)}%</span></div>`).join('') +
+    `<div class="part" style="border-top:1px solid var(--line);padding-top:6px;font-weight:600"><span></span><span>LCOS</span><span class="pv">${fmt(R.lcos, 1)}</span><span class="pp">100%</span></div>`;
+  drawCompare(R, st);
+  drawSensitivity(R, x);
+  drawDuration(R, x);
+}
+
+function drawOversize(R, x) {
+  {
+    const tn = x.dNom, soh = R.sohP, dE = R.eolDod, se = Math.sqrt(x.eta);
+    const segs = x.pumped ? [['dcEff', R.dEff, '--accent']] : [['dcEff', R.dEff, '--accent'], ['dcEta', tn * soh * dE * (1 - se), '--c4'], ['dcDod', tn * soh * (1 - dE), '--c2'], ['dcDeg', tn * (1 - soh), '--c1']];
+    const dw = $('decomp').clientWidth || 600;
+    const ink = { '--accent': 'var(--ink-acc)', '--c1': 'var(--ink-acc)', '--c2': '#16202b', '--c4': '#16202b' };
+    $('decomp').innerHTML = segs.map(([k, v, c]) => `<div style="width:${v / tn * 100}%;background:var(${c});color:${ink[c]}" title="${T(k)} ${fmt(v, 2)} h">${v / tn * dw > 46 ? fmt(v, 2) + 'h' : ''}</div>`).join('');
+    $('decompNote').textContent = T(x.pumped ? 'dcNoteP' : 'dcNote');
+    $('decompLeg').innerHTML = segs.map(([k, v, c]) => `<div><i style="background:var(${c})"></i><span>${T(k)}</span><b>${fmt(v, 2)} h</b></div>`).join('') +
+      `<div><i style="background:transparent;border:1px solid var(--muted)"></i><span>${T('dcTot')}</span><b>${fmt(tn, 2)} h</b></div>`;
+  }
+  const svg = $('ovChart');
+  const cw = svg.clientWidth || svg.parentNode.clientWidth || 640;
+  const W = Math.max(300, Math.min(760, Math.round(cw))), H = W < 480 ? 230 : 240;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const L = 72, Rm = 14, Tp = 14, B = 40;
+  const nom = R.eCap / 1000, fix = x.P * R.dEff / 1000;
+  const n = R.nOp;
+  const ymax = niceMax(nom * 1.05);
+  const X = k => L + (W - L - Rm) * k / n, Y = v => Tp + (H - Tp - B) * (1 - v / ymax);
+  let s = '';
+  ticks(ymax).forEach(v => { s += `<line class="grid-l" x1="${L}" x2="${W - Rm}" y1="${Y(v)}" y2="${Y(v)}"/><text class="tick" x="${L - 8}" y="${Y(v) + 4}" text-anchor="end">${v === 0 ? '0' : ymax < 10 ? fmt(v, 1) : fmt(v)}</text>`; });
+  const pxPer = (W - L - Rm) / n;
+  const steps = [1, 2, 5, 10, 20];
+  const step = steps.find(st => st * pxPer >= 28) || 20;
+  const xt = [];
+  for (let k = 0; k <= n; k += step) xt.push(k);
+  if (xt[xt.length - 1] !== n) { if ((n - xt[xt.length - 1]) * pxPer < 24) xt.pop(); xt.push(n); }
+  xt.forEach(k => { s += `<text class="tick" x="${X(k)}" y="${H - B + 16}" text-anchor="middle">${k}</text>`; });
+  s += `<line class="ax" x1="${L}" x2="${W - Rm}" y1="${Y(0)}" y2="${Y(0)}"/>`;
+  s += `<text class="tick" x="${(L + W - Rm) / 2}" y="${H - 4}" text-anchor="middle">${T('axYear')}</text>`;
+  s += `<text class="tick" x="12" y="${(Tp + H - B) / 2}" text-anchor="middle" transform="rotate(-90 12 ${(Tp + H - B) / 2})">${T('axMWh')}</text>`;
+  const cap = R.soh.map((v, k) => [X(k), Y(v * nom)]);
+  const area = `M${cap.map(p => p.join(',')).join(' L')} L${X(n)},${Y(fix)} L${X(0)},${Y(fix)} Z`;
+  s += `<path d="${area}" style="fill:var(--c2);opacity:.14"/>`;
+  s += `<line x1="${X(0)}" x2="${X(n)}" y1="${Y(nom)}" y2="${Y(nom)}" style="stroke:var(--muted);stroke-width:1.5;stroke-dasharray:5 4;fill:none"/>`;
+  s += `<path d="M${cap.map(p => p.join(',')).join(' L')}" style="fill:none;stroke:var(--c1);stroke-width:2.5"/>`;
+  s += `<line x1="${X(0)}" x2="${X(n)}" y1="${Y(fix)}" y2="${Y(fix)}" style="stroke:var(--accent);stroke-width:2.5;fill:none"/>`;
+  const end = cap[cap.length - 1];
+  s += `<circle cx="${end[0]}" cy="${end[1]}" r="4" style="fill:var(--c1)"/><circle cx="${X(n)}" cy="${Y(fix)}" r="4" style="fill:var(--accent)"/>`;
+  const lab = (xx, yy, txt, col, anchor = 'end') => `<text class="chart-lab" x="${xx}" y="${yy}" text-anchor="${anchor}" style="fill:var(${col});font-size:12px;font-weight:600">${txt}</text>`;
+  if (!x.pumped) {
+    const nearNom = Math.abs(end[1] - Y(nom)) < 16, nearFix = Math.abs(end[1] - Y(fix)) < 30;
+    s += lab(end[0] - 8, nearNom && !nearFix ? end[1] + 16 : end[1] - 8, fmtMWh(R.sohP * nom) + ' MWh', '--c1');
+    s += lab(X(n) - 8, Y(fix) + 16, fmtMWh(fix) + ' MWh', '--accent');
+    s += lab(X(0) + 6, Y(nom) - 6, fmtMWh(nom) + ' MWh', '--muted', 'start');
+  } else {
+    s += lab(X(n) - 8, Y(fix) + 16, fmtMWh(fix) + ' MWh', '--accent');
+  }
+  svg.innerHTML = s;
+  $('ovCap').textContent = x.pumped ? (S.tech === 'CUSTOM' ? T('ovCapPc')(fmtMWh(nom)) : T('ovCapP')(fmtMWh(nom)))
+    : S.basis === 'nom' ? T('ovCapBn')(fmtMWh(nom), fmtMWh(fix), n, fmt(R.sohP * 100, 1), fmt(R.eolDod * 100, 1), fmt(Math.sqrt(x.eta) * 100, 1), fmt(R.dEff, 2))
+    : T('ovCapB')(fmtMWh(nom), fmtMWh(fix), n, fmt(R.sohP * 100, 1), fmt(R.eolDod * 100, 1), fmt(Math.sqrt(x.eta) * 100, 1));
+  $('ovLegend').innerHTML = x.pumped ? `<span><i style="background:var(--accent)"></i>${T('lgFix')} = ${T('lgNom')}</span>`
+    : `<span><i class="dash"></i>${T('lgNom')}</span><span><i style="background:var(--c1)"></i>${T('lgCap')}</span><span><i style="background:var(--accent)"></i>${T('lgFix')}</span>`;
+}
+function niceMax(v) { const p = 10 ** Math.floor(Math.log10(v)); const m = v / p; const st = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 7.5, 10].find(s => m <= s + 1e-9); return st * p; }
+function ticks(max) { const out = []; const st = max / 5; for (let i = 0; i <= 5; i++) out.push(round(st * i, 6)); return out; }
+
+function drawCompare(Rsel, selStatus) {
+  const keys = ['LFP', 'NCM', 'NMF', 'NFPP', 'PSH'];
+  if (S.tech === 'CUSTOM') keys.push('CUSTOM');
+  const rows = [];
+  keys.forEach(k => {
+    if (k === S.tech) { rows.push({ k, v: Rsel.lcos, sel: true, st: selStatus, dn: lastX.dNom, de: Rsel.dEff }); return; }
+    const t = TECH[k];
+    const b = buildX(k, t.p, { cyc: curCyc(), cost: null, man: {}, pumped: t.pumped });
+    if (!b.auto || b.status === 'out') return;
+    const Rk = computeLCOS(b.x);
+    if (!physOK(b.x, Rk)) return;
+    rows.push({ k, v: Rk.lcos, st: b.status, dn: b.x.dNom, de: Rk.dEff });
+  });
+  const max = Math.max(...rows.map(r => r.v));
+  const tag = r => {
+    if (TECH[r.k].explore) return ` <span class="tag-ex">${T('explore')}</span>`;
+    if (r.st === 'interp') return ` <span class="tag-ip">${T('tagIp')}</span>`;
+    if (r.st === 'out') return ` <span class="tag-out">${T('tagOut')}</span>`;
+    return '';
+  };
+  const other = r => S.basis === 'eff' ? `${T('nomS')} ${fmt(r.dn, 1)}h` : `${T('effS')} ${fmt(r.de, 1)}h`;
+  $('cmp').innerHTML = `<div class="cmp-row cmp-head"><span></span><span>LCOS</span><span class="val">${T('uKWh')}</span></div>` + rows.map(r => `<div class="cmp-row${r.sel ? ' sel' : ''}">
+    <span class="nm">${T('names')[r.k]}${tag(r)} <small class="od">${other(r)}</small></span>
+    <span class="bar"><div style="width:${r.v / max * 100}%"></div></span>
+    <span class="val">${fmt(r.v, 1)}</span></div>`).join('') + (rows.length === 1 ? `<p class="note">${T('cmpOnly')}</p>` : '');
+}
+
+/* ---------- sensitivity (tornado) ---------- */
+const SER = { LFP: '--s1', NCM: '--s2', PSH: '--s3', NMF: '--s4', NFPP: '--s5' };
+function physOK(x, R) { return !(!x.pumped && R.eolDod > 1 + 1e-9) && R.dEff * x.cyc * (1 + 1 / x.eta) <= 8760 && R.nOp >= 1; }
+function drawSensitivity(R, x) {
+  const items = [['cp', 'lCP'], ['ce', 'lCE'], ['om', 'lOM'], ['r', 'lR'], ['cyc', 'lCyc'], ['eta', 'lEta'], ['lifeC', 'lLifeC'], ['lifeY', 'lLifeY']];
+  if (x.pel > 0) items.push(['pel', 'lPel']);
+  const base = R.lcos;
+  const rows = [];
+  items.forEach(([k, lab]) => {
+    const out = [0.8, 1.2].map(f => {
+      let y = { ...x };
+      if (['cyc', 'eta', 'lifeC', 'lifeY', 'contract'].includes(k)) {
+        const p2 = { ...S.p }; let cyc2 = curCyc(); let nF;
+        if (k === 'cyc') cyc2 = x.cyc * f; else if (k === 'eta') p2.eta = Math.min(100, S.p.eta * f); else if (k === 'contract') nF = Math.max(1, Math.round(S.contract * f)); else p2[k] = S.p[k] * f;
+        if (k === 'eta' && p2.eta === S.p.eta) return { v: base, same: true };
+        const b = buildX(S.tech, p2, { cyc: cyc2, cost: S.cost, man: TECH[S.tech].custom ? { cp: true, ce: true, om: true } : S.man, pumped: S.pumped, nFix: nF });
+        if (b.auto && b.status === 'out' && !COSTS.every(c => S.man[c])) return null;
+        y = b.x;
+        if (![y.dNom, y.cp, y.ce, y.om].every(isFinite)) return null;
+      } else {
+        y[k] = x[k] * f;
+      }
+      const Ry = computeLCOS(y);
+      return physOK(y, Ry) && isFinite(Ry.lcos) ? { v: Ry.lcos } : null;
+    });
+    const span = Math.max(...out.map(o => o ? Math.abs(o.v - base) : 0));
+    if (span >= 0.05) rows.push({ lab: T(lab), lo: out[0], hi: out[1], span });
+  });
+  rows.sort((a, b) => b.span - a.span);
+  const m = Math.max(...rows.map(r => r.span), 1e-9);
+  const bar = (o, cls) => {
+    if (!o) return '';
+    const d = o.v - base, w = Math.abs(d) / m * 50, l = d < 0 ? 50 - w : 50;
+    return `<div class="tb ${cls}" style="left:${l}%;width:${w}%"></div>`;
+  };
+  const val = o => o ? fmt(o.v, 1) : '–';
+  const L = S.lang === 'ko';
+  $('sen').innerHTML = `<div class="sen-row sen-head"><span></span><span class="sen-axis"><span>${L ? '← LCOS 낮아짐' : '← LCOS lower'}</span><span>${T('senBase')(fmt(base, 1))} ${T('uKWh')}</span><span>${L ? 'LCOS 높아짐 →' : 'LCOS higher →'}</span></span><span class="sv slo">−20%</span><span class="sv shi">+20%</span></div>` +
+    rows.map(r => `<div class="sen-row" title="${r.lab}: −20% → ${val(r.lo)}, +20% → ${val(r.hi)} ${T('uKWh')}">
+      <span class="sl">${r.lab}</span>
+      <span class="sbar"><span class="mid"></span>${bar(r.lo, 'lo')}${bar(r.hi, 'hi')}</span>
+      <span class="sv slo">${val(r.lo)}</span><span class="sv shi">${val(r.hi)}</span></div>`).join('') +
+    `<div class="legend" style="margin-top:4px"><span><i style="background:var(--s1)"></i>${L ? '입력값 −20%' : 'Input −20%'}</span><span><i style="background:var(--s2)"></i>${L ? '입력값 +20%' : 'Input +20%'}</span><span>${L ? '오른쪽 숫자: 해당 LCOS(원/kWh)' : 'Numbers: resulting LCOS (KRW/kWh)'}</span></div>`;
+}
+
+/* ---------- LCOS by duration ---------- */
+const DURS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 22, 24];
+function refInputs(k, d) {
+  const t = TECH[k];
+  const b = buildX(k, t.p, { cost: null, man: {}, pumped: t.pumped, d });
+  if (!b.auto || b.status === 'out') return null;
+  if (!physOK(b.x, computeLCOS(b.x))) return null;
+  return b.x;
+}
+let durData = null;
+function drawDuration(R, x) {
+  const keys = ['LFP', 'NCM', 'NMF', 'NFPP', 'PSH'];
+  const series = keys.map(k => ({ k, pts: DURS.map(d => { const y = refInputs(k, d); return y ? { d, v: computeLCOS(y).lcos } : null; }) }))
+    .filter(s => s.pts.some(p => p));
+  const svg = $('durChart');
+  const cw = svg.clientWidth || svg.parentNode.clientWidth || 640;
+  const W = Math.max(300, Math.min(760, Math.round(cw))), H = W < 480 ? 250 : 270;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const Lm = 56, Rm = 14, Tp = 14, B = 40;
+  if (!series.length) {
+    svg.innerHTML = `<text class="tick" x="${W / 2}" y="${H / 2}" text-anchor="middle" style="font-size:13px">${T('durNone')}</text>`;
+    durData = null; $('durTip').hidden = true;
+    $('durCap').textContent = T('durCap')(fmtA(S.P), T(S.basis === 'eff' ? 'basisWordE' : 'basisWordN')); $('durLegend').innerHTML = '';
+    return;
+  }
+  const vals = series.flatMap(s => s.pts.filter(p => p).map(p => p.v));
+  const outAuto = S.autoStatus === 'out' && !COSTS.every(k => S.man[k]);
+  const showNow = keys.includes(S.tech) && S.d >= 2 && S.d <= 24 && !outAuto;
+  if (showNow) vals.push(R.lcos);
+  const ymax = niceMax(Math.max(...vals) * 1.05);
+  const X = d => Lm + (W - Lm - Rm) * (d - 2) / 22, Y = v => Tp + (H - Tp - B) * (1 - v / ymax);
+  let s = '';
+  ticks(ymax).forEach(v => { s += `<line class="grid-l" x1="${Lm}" x2="${W - Rm}" y1="${Y(v)}" y2="${Y(v)}"/><text class="tick" x="${Lm - 8}" y="${Y(v) + 4}" text-anchor="end">${fmt(v)}</text>`; });
+  const xt = W < 480 ? [2, 6, 10, 16, 24] : [2, 4, 6, 8, 10, 12, 16, 20, 24];
+  xt.forEach(d => { s += `<text class="tick" x="${X(d)}" y="${H - B + 16}" text-anchor="middle">${d}</text>`; });
+  s += `<line class="ax" x1="${Lm}" x2="${W - Rm}" y1="${Y(0)}" y2="${Y(0)}"/>`;
+  s += `<text class="tick" x="${(Lm + W - Rm) / 2}" y="${H - 4}" text-anchor="middle">${T(S.basis === 'eff' ? 'axDurE' : 'axDur')}</text>`;
+  s += `<text class="tick" x="12" y="${(Tp + H - B) / 2}" text-anchor="middle" transform="rotate(-90 12 ${(Tp + H - B) / 2})">${T('uKWh')}</text>`;
+  series.forEach(se => {
+    const sel = se.k === S.tech;
+    let path = '', pen = false;
+    se.pts.forEach(p => { if (!p) { pen = false; return; } path += `${pen ? 'L' : 'M'}${X(p.d).toFixed(1)},${Y(p.v).toFixed(1)} `; pen = true; });
+    s += `<path d="${path}" style="fill:none;stroke:var(${SER[se.k]});stroke-width:${sel ? 3 : 2};stroke-linejoin:round;stroke-linecap:round;${TECH[se.k].explore ? 'stroke-dasharray:6 4;' : ''}${sel ? '' : 'opacity:.85;'}"/>`;
+  });
+  if (showNow) s += `<circle cx="${X(S.d)}" cy="${Y(R.lcos)}" r="5" style="fill:var(--surface);stroke:var(--fg);stroke-width:2"/><text class="chart-lab" x="${X(S.d) + (S.d > 18 ? -9 : 9)}" y="${Y(R.lcos) - 9}" text-anchor="${S.d > 18 ? 'end' : 'start'}" style="fill:var(--fg);font-size:11.5px;font-weight:600">${T('durNow')} ${fmt(R.lcos, 1)}</text>`;
+  s += `<line id="durX" class="ax" x1="0" x2="0" y1="${Tp}" y2="${Y(0)}" style="visibility:hidden;stroke:var(--muted)"/>`;
+  s += `<rect x="${Lm}" y="${Tp}" width="${W - Lm - Rm}" height="${H - Tp - B}" style="fill:transparent" id="durHit"/>`;
+  svg.innerHTML = s;
+  durData = { series, X, W, Lm, Rm };
+  $('durTip').hidden = true;
+  $('durCap').textContent = T('durCap')(fmtA(S.P), T(S.basis === 'eff' ? 'basisWordE' : 'basisWordN'));
+  $('durLegend').innerHTML = series.map(se => `<span><i style="background:var(${SER[se.k]})${TECH[se.k].explore ? ';background:repeating-linear-gradient(90deg,var(' + SER[se.k] + ') 0 5px,transparent 5px 8px)' : ''}"></i>${T('names')[se.k]}${TECH[se.k].explore ? ' (' + T('explore') + ')' : ''}</span>`).join('') +
+    (showNow ? `<span><i style="width:9px;height:9px;border-radius:50%;border:2px solid var(--fg);background:var(--surface)"></i>${T('durNow')}</span>` : '');
+}
+function bindDurHover() {
+  const svg = $('durChart'), tip = $('durTip');
+  const hide = () => { tip.hidden = true; const l = $('durX'); if (l) l.style.visibility = 'hidden'; };
+  const show = e => {
+    if (!durData) return;
+    const rect = svg.getBoundingClientRect();
+    const vx = (e.clientX - rect.left) / rect.width * durData.W;
+    if (vx < durData.Lm - 6 || vx > durData.W - durData.Rm + 6) { hide(); return; }
+    let best = DURS[0]; DURS.forEach(d => { if (Math.abs(durData.X(d) - vx) < Math.abs(durData.X(best) - vx)) best = d; });
+    const i = DURS.indexOf(best);
+    const lines = durData.series.map(se => ({ k: se.k, p: se.pts[i] })).filter(o => o.p).sort((a, b) => a.p.v - b.p.v);
+    if (!lines.length) { hide(); return; }
+    const l = $('durX'); l.setAttribute('x1', durData.X(best)); l.setAttribute('x2', durData.X(best)); l.style.visibility = 'visible';
+    tip.innerHTML = `<b>${T(S.basis === 'eff' ? 'effS' : 'nomS')} ${best} h · ${T('uKWh')}</b>` +
+      lines.map(o => `<div><i style="background:var(${SER[o.k]})"></i><span class="tn">${T('names')[o.k]}${TECH[o.k].explore ? ' <em class="tag-ex">' + T('explore') + '</em>' : ''}</span><span class="tv">${fmt(o.p.v, 1)}</span></div>`).join('');
+    tip.hidden = false;
+    const px = durData.X(best) / durData.W * rect.width, tw = tip.offsetWidth;
+    tip.style.left = (px + 12 + tw > rect.width ? Math.max(0, px - tw - 12) : px + 12) + 'px';
+  };
+  svg.addEventListener('pointermove', show);
+  svg.addEventListener('pointerdown', show);
+  svg.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') hide(); });
+  document.addEventListener('pointerdown', e => { if (!svg.contains(e.target)) hide(); });
+}
+
+
+loadTech('LFP');
+bindInputs();
+bindDurHover();
+try { if (window.self !== window.top) { const of = $('openFull'); of.href = location.href; of.hidden = false; } } catch (e) { const of = $('openFull'); of.href = location.href; of.hidden = false; }
+syncForm();
+applyLang();
+</script>
+
+</body>
+</html>
