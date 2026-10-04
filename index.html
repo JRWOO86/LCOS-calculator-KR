@@ -78,6 +78,7 @@ p { margin: 0; }
 .byline a { color: var(--muted); font-family: var(--font-num); font-size: 12.5px; text-decoration: none; border-bottom: 1px solid var(--line); }
 .byline a:hover { color: var(--accent); border-color: var(--accent); }
 .affil { margin-top: 2px; font-size: 13px; color: var(--muted); }
+.ver { margin-top: 2px; font-size: 12px; color: var(--muted); font-family: var(--font-num); }
 .lede { margin-top: 10px; max-width: 68ch; color: var(--muted); font-size: 15px; }
 .lang { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--surface); }
 .lang button { border: 0; background: transparent; color: var(--muted); font: 500 13px var(--font-ui); padding: 6px 12px; cursor: pointer; }
@@ -303,7 +304,8 @@ table.pt td:first-child { font-family: var(--font-ui); }
         <span class="au"><b data-i="n1"></b> <a href="mailto:oily_choi@korea.ac.kr">oily_choi@korea.ac.kr</a></span>
         <span class="au"><b data-i="n2"></b> <a href="mailto:jrwoo@korea.ac.kr">jrwoo@korea.ac.kr</a></span>
       </div>
-      <p class="affil"><span data-i="affil"></span> · 2026</p>
+      <p class="affil"><span data-i="affil"></span></p>
+      <p class="ver" data-i="ver"></p>
       <p class="lede" data-i="lede"></p>
     </div>
     <div class="head-r"><div class="lang" role="group" aria-label="Language">
@@ -469,6 +471,7 @@ const I18N = {
   ko: {
     eyebrow: 'Energy Innovation Lab · ESS 경제성 도구',
     h1: 'ESS 균등화저장비용(LCOS) 계산기',
+    ver: 'v1.0 · 2026년 10월 4일 업데이트',
     n1: '최지성', n2: '우종률', affil: '고려대학교 에너지환경대학원 & 융합에너지공학과',
     lede: '국내 ESS 중앙계약시장의 입찰조건을 반영해, 저장설비가 생애주기 동안 1kWh를 방전하는 데 드는 비용을 계산합니다. 국내 기준비용을 바탕으로 한 사례값으로 시작하고, 규모와 비용·기술 파라미터는 직접 바꿔 볼 수 있습니다.',
     r0: '중앙계약시장 기준',
@@ -565,6 +568,7 @@ const I18N = {
   en: {
     eyebrow: 'Energy Innovation Lab · ESS economics tool',
     h1: 'Levelized Cost of Storage Calculator for Korea',
+    ver: 'v1.0 · Updated 4 October 2026',
     n1: 'Jiseong Choi', n2: 'JongRoul Woo', affil: 'Graduate School of Energy and Environment & Department of Integrative Energy Engineering, Korea University',
     lede: 'Calculates the lifetime cost of each kWh an energy storage system discharges, under the bidding rules of Korea\'s ESS central contract market. It starts from cases based on Korean base costs; you can change the size, costs and technical parameters yourself.',
     r0: 'Central contract market',
